@@ -70,7 +70,7 @@ local SCRIPTS = {
     },
         {
         name = "Esp Apocalypse Rising 2",
-        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))(),
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))()',
         description = "Esp for Apocalypse Rising 2"
     },
         {
@@ -110,7 +110,7 @@ local SCRIPTS = {
     },
         {
         name = "Limb Extender",
-        loadstring = 'loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua'))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua"))()',
         description = "Limb extender also a Head Expander"
     },
         {
