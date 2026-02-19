@@ -1,0 +1,2 @@
+﻿print("GameId:", game.GameId)
+print("PlaceId:", game.PlaceId)
