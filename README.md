@@ -14,7 +14,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllSc
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYWBTQQMODQHX4RLA6Q2MWNBTA"))()
 ```
 
 ## Aimbot und Esp Apocalypse Rising 2
@@ -22,7 +22,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYWH6BWKK4NE6MCKGB62MWNB2Q"))()
 ```
 
 ## Anti Afk
@@ -30,7 +30,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()
 ```
 
 ## Apocalypse Rising 2 (Meins)
@@ -38,7 +38,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20(Meins)?token=GHSAT0AAAAAADVTNJYWB52VBHP2TGYH7SR42MWNCJA"))()
 ```
 
 ## Apocalypse Rising 2 TEST (Meins)
@@ -46,7 +46,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20TEST%20(Meins)?token=GHSAT0AAAAAADVTNJYXNEPMAF3AEAM4VICK2MWNCOQ"))()
 ```
 
 ## Auto Execute Vorlage
@@ -54,7 +54,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Auto%20Execute%20Vorlage?token=GHSAT0AAAAAADVTNJYWNPOM3GMYT7XLFHT22MWNCUA"))()
 ```
 
 ## Brookhaven TROLL
@@ -62,7 +62,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-C00LKIDD-HUB-atualizado-74293"))()
 ```
 
 ## Build a Boat for a Treasure
@@ -70,7 +70,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure?token=GHSAT0AAAAAADVTNJYXGICKJDBEM5LJJLG22MWNC6A"))()
 ```
 
 ## Build a Boat for a Treasure (Key)
@@ -78,7 +78,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/TheRealAsu/BABFT/refs/heads/main/Loader.lua'))()
 ```
 
 ## Car Crushers 2
@@ -86,7 +86,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://soggyhubv2.vercel.app"))()
 ```
 
 ## Coordinate
@@ -94,7 +94,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Coordinate?token=GHSAT0AAAAAADVTNJYW7PX3XPC6W6J4XIAS2MWNDRA"))()
 ```
 
 ## Delete Parts
@@ -102,7 +102,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Delete%20Parts?token=GHSAT0AAAAAADVTNJYWXQW6E2PUULH4QFR62MWNDWA"))()
 ```
 
 ## Esp Apocalypse Rising 2
@@ -110,23 +110,21 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Esp%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYWRT7HQDJVHYJER3AU2MWND3A"))()
 ```
 
 ## Every Emote
 
 
-
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()
 ```
 
 ## Fisch Script
 
 
-
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(Game:HttpGet("https://raw.githubusercontent.com/yolobradda/eclipsefisch/refs/heads/main/eclipsefisch"))()
 ```
 
 ## Game Id Teller
@@ -134,7 +132,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Game%20Id%20Teller?token=GHSAT0AAAAAADVTNJYWO22QJMCTLVYI77RE2MWNEOQ"))()
 ```
 
 ## Infinite Yield
@@ -142,7 +140,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 ```
 
 ## Jerk Scripts
@@ -150,7 +148,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Jerk%20Scripts?token=GHSAT0AAAAAADVTNJYWLNH2ABP4XKMKOKG22MWNE3Q"))()
 ```
 
 ## Knockout
@@ -158,7 +156,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Knockout?token=GHSAT0AAAAAADVTNJYXRUWHD7OK3W6TLNQU2MWNFLQ"))()
 ```
 
 ## Limb Extender
@@ -166,7 +164,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua'))()
 ```
 
 ## Obby Creator
@@ -174,7 +172,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Blocky69/boblus-scriptz/refs/heads/main/oc"))()
 ```
 
 ## Quiz Script
@@ -182,7 +180,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+local CategoryManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Damian-11/quizbot/master/quizbot.luau"))()
 ```
 
 ## Rain Hub Apocalypse Rising 2
@@ -190,7 +188,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raiidev.xyz/rain/loader"))()
 ```
 
 ## Script Hub
@@ -198,7 +196,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://pastebin.com/raw/Wf9z70eE"))()
 ```
 
 ## Slap Battles
@@ -206,7 +204,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Slap%20Battles?token=GHSAT0AAAAAADVTNJYX3HNPCOFZDGMLJJLY2MWNGGA"))()
 ```
 
 ## Steal a Brainrot
@@ -214,7 +212,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot?token=GHSAT0AAAAAADVTNJYWEIDC2VG3BDNVHRMK2MWNGLA"))()
 ```
 
 ## Steal a Brainrot Leute nerven
@@ -222,7 +220,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot%20Leute%20nerven?token=GHSAT0AAAAAADVTNJYWRJIGMHUYGRIL7BQQ2MWNGTQ"))()
 ```
 
 ## Teleport Manager
@@ -230,7 +228,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Teleport%20Manager?token=GHSAT0AAAAAADVTNJYXTR2T5KVIWCVISCBM2MWNGYA"))()
 ```
 
 ## Uncopylocker Script
@@ -238,7 +236,7 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Uncopylocker%20Script?token=GHSAT0AAAAAADVTNJYW46F7CHOSWLYEI5IQ2MWNG5A"))()
 ```
 
 ## Universal Script
@@ -246,5 +244,5 @@ loadstring(game:HttpGet(""))()
 
 
 ```bash
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://pastebin.com/raw/Piw5bqGq"))()
 ```
