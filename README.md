@@ -41,14 +41,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-
 loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20(Meins)?token=GHSAT0AAAAAADVTNJYWB52VBHP2TGYH7SR42MWNCJA"))()
 ```
 
-## Apocalypse Rising 2 TEST (Meins)
-
-
-
-```bash
-loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20TEST%20(Meins)?token=GHSAT0AAAAAADVTNJYXNEPMAF3AEAM4VICK2MWNCOQ"))()
-```
-
 ## Auto Execute Vorlage
 
 
