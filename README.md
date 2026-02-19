@@ -232,7 +232,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Teleport%20Manager?token=GHSAT0AAAAAADVTNJYWOLVSOACCSUQCMFT62MXM3KA"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Teleport%20Manager"))()
 ```
 
 ## Uncopylocker Script
