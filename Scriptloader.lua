@@ -9,9 +9,159 @@ local Player = Players.LocalPlayer
 -- ============================================
 local SCRIPTS = {
     {
-        name = "Knockout Script",
-        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Puplic-Scripts/main/Knockout.lua"))()',
-        description = "Knockout Auto Win Script"
+        name = "APOC ULTIMATIV.lua",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/APOC%20ULTIMATIV.lua"))()',
+        description = "Rain Hub + my Esp and Aimbot"
+    },
+        {
+        name = "Aimbot Apocalypse Rising 2",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202"))()',
+        description = "My Aimbot for Apocalypse Rising 2"
+    },
+        {
+        name = "Aimbot und Esp Apocalypse Rising 2",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202"))()',
+        description = "My Aimbot and Esp for Apocalypse Rising 2"
+    },
+        {
+        name = "Anti Afk",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()',
+        description = "Turns of the 20 Min Afk Kick"
+    },
+        {
+        name = "Apocalypse Rising 2 (My)",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20(Meins)"))()',
+        description = "My own Apocalypse Rising 2 Script Hub (unfinished)"
+    },
+        {
+        name = "Auto Execute Template",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Auto%20Execute%20Vorlage"))()',
+        description = "My Template for Auto Executing File"
+    },
+        {
+        name = "Brookhaven TROLL",
+        loadstring = 'loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-C00LKIDD-HUB-atualizado-74293"))()',
+        description = "Script to Troll in Brookhaven"
+    },
+        {
+        name = "Build a Boat for a Treasure",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure"))()',
+        description = "Just a FREE Babft"
+    },
+        {
+        name = "Build a Boat for a Treasure (Key)",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/TheRealAsu/BABFT/refs/heads/main/Loader.lua"))()',
+        description = "A Babft Script but requieres a Key"
+    },
+        {
+        name = "Car Crushers 2",
+        loadstring = 'loadstring(game:HttpGet("https://soggyhubv2.vercel.app"))()',
+        description = "Basic Car Crushers 2 Script"
+    },
+        {
+        name = "Coordinate",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Coordinate"))()',
+        description = "Shows your current Coordinates and you can copy them"
+    },
+        {
+        name = "Delete Parts",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Delete%20Parts',
+        description = "Lets you delete Parts and bring them back"
+    },
+        {
+        name = "Esp Apocalypse Rising 2",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))(),
+        description = "Esp for Apocalypse Rising 2"
+    },
+        {
+        name = "Every Emote",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()',
+        description = "Lets you use every Emote"
+    },
+        {
+        name = "Fisch Script",
+        loadstring = 'loadstring(Game:HttpGet("https://raw.githubusercontent.com/yolobradda/eclipsefisch/refs/heads/main/eclipsefisch"))()',
+        description = "A useful script for Fisch"
+    },
+        {
+        name = "Fling Things and People",
+        loadstring = 'loadstring(game:HttpGet("https://rawscripts.net/raw/Fling-Things-and-People-FTAP-VHS-15769"))()',
+        description = "Pretty fun to use"
+    },
+        {
+        name = "Game Id Teller",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Game%20Id%20Teller"))()',
+        description = "Tells you the current Game and Place Id"
+    },
+        {
+        name = "Infinite Yield",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()',
+        description = "Lets you execute hundreds of commands"
+    },
+        {
+        name = "Jerk Scripts",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Jerk%20Scripts"))()',
+        description = "Lets you jerk off in R6,R15 and R34"
+    },
+        {
+        name = "Knockout",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Knockout"))()',
+        description = "A Knockout auto win script"
+    },
+        {
+        name = "Limb Extender",
+        loadstring = 'loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua'))()',
+        description = "Limb extender also a Head Expander"
+    },
+        {
+        name = "Obby Creator",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/Blocky69/boblus-scriptz/refs/heads/main/oc"))()',
+        description = "Obby Creator Troll Script"
+    },
+        {
+        name = "Quiz Script",
+        loadstring = 'local CategoryManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Damian-11/quizbot/master/quizbot.luau"))()',
+        description = "Lets you do Quizes in the Chat"
+    },
+        {
+        name = "Rain Hub Apocalypse Rising 2",
+        loadstring = 'loadstring(game:HttpGet("https://raiidev.xyz/rain/loader"))()',
+        description = "Best Apocalypse Rising 2 Script but with a Key"
+    },
+        {
+        name = "Script Hub",
+        loadstring = 'loadstring(game:HttpGet("https://pastebin.com/raw/Wf9z70eE"))()',
+        description = "A very old Scripthub (not good)"
+    },
+        {
+        name = "Slap Battles",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Slap%20Battles"))()',
+        description = "A useful Slap Battles Script"
+    },
+        {
+        name = "Steal a Brainrot",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot"))()',
+        description = "Steal a Brainrot steal helper"
+    },
+        {
+        name = "Steal a Brainrot Auto fuck off",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off"))()',
+        description = "Auto Slaps selected Player and stuff"
+    },
+        {
+        name = "Teleport Manager",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Teleport%20Manager"))()',
+        description = "Lets you teleport to players and copy Coordinates"
+    },
+            {
+        name = "Uncopylocker Script",
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Uncopylocker%20Script"))()',
+        description = "Lets you uncopylock every Game"
+    },
+            {
+        name = "Universal Script",
+        loadstring = 'loadstring(game:HttpGet("https://pastebin.com/raw/Piw5bqGq"))()',
+        description = "Has many Scripts in it"
     },
 }
 
