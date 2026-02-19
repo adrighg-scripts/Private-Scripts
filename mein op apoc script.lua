@@ -1,1 +1,0 @@
-﻿loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Apoc2/refs/heads/main/Script"))()
