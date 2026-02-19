@@ -13,152 +13,152 @@ local SCRIPTS = {
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/APOC%20ULTIMATIV.lua"))()',
         description = "Rain Hub + my Esp and Aimbot"
     },
-        {
+    {
         name = "Aimbot Apocalypse Rising 2",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202"))()',
         description = "My Aimbot for Apocalypse Rising 2"
     },
-        {
+    {
         name = "Aimbot und Esp Apocalypse Rising 2",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202"))()',
         description = "My Aimbot and Esp for Apocalypse Rising 2"
     },
-        {
+    {
         name = "Anti Afk",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()',
         description = "Turns of the 20 Min Afk Kick"
     },
-        {
+    {
         name = "Apocalypse Rising 2 (My)",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Apocalypse%20Rising%202%20(Meins)"))()',
         description = "My own Apocalypse Rising 2 Script Hub (unfinished)"
     },
-        {
+    {
         name = "Auto Execute Template",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Auto%20Execute%20Vorlage"))()',
         description = "My Template for Auto Executing File"
     },
-        {
+    {
         name = "Brookhaven TROLL",
         loadstring = 'loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-C00LKIDD-HUB-atualizado-74293"))()',
         description = "Script to Troll in Brookhaven"
     },
-        {
+    {
         name = "Build a Boat for a Treasure",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure"))()',
         description = "Just a FREE Babft"
     },
-        {
+    {
         name = "Build a Boat for a Treasure (Key)",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/TheRealAsu/BABFT/refs/heads/main/Loader.lua"))()',
         description = "A Babft Script but requieres a Key"
     },
-        {
+    {
         name = "Car Crushers 2",
         loadstring = 'loadstring(game:HttpGet("https://soggyhubv2.vercel.app"))()',
         description = "Basic Car Crushers 2 Script"
     },
-        {
+    {
         name = "Coordinate",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Coordinate"))()',
         description = "Shows your current Coordinates and you can copy them"
     },
-        {
+    {
         name = "Delete Parts",
-        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Delete%20Parts',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Delete%20Parts"))()',
         description = "Lets you delete Parts and bring them back"
     },
-        {
+    {
         name = "Esp Apocalypse Rising 2",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))()',
         description = "Esp for Apocalypse Rising 2"
     },
-        {
+    {
         name = "Every Emote",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua"))()',
         description = "Lets you use every Emote"
     },
-        {
+    {
         name = "Fisch Script",
         loadstring = 'loadstring(Game:HttpGet("https://raw.githubusercontent.com/yolobradda/eclipsefisch/refs/heads/main/eclipsefisch"))()',
         description = "A useful script for Fisch"
     },
-        {
+    {
         name = "Fling Things and People",
         loadstring = 'loadstring(game:HttpGet("https://rawscripts.net/raw/Fling-Things-and-People-FTAP-VHS-15769"))()',
         description = "Pretty fun to use"
     },
-        {
+    {
         name = "Game Id Teller",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Game%20Id%20Teller"))()',
         description = "Tells you the current Game and Place Id"
     },
-        {
+    {
         name = "Infinite Yield",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()',
         description = "Lets you execute hundreds of commands"
     },
-        {
+    {
         name = "Jerk Scripts",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Jerk%20Scripts"))()',
         description = "Lets you jerk off in R6,R15 and R34"
     },
-        {
+    {
         name = "Knockout",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Knockout"))()',
         description = "A Knockout auto win script"
     },
-        {
+    {
         name = "Limb Extender",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua"))()',
         description = "Limb extender also a Head Expander"
     },
-        {
+    {
         name = "Obby Creator",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/Blocky69/boblus-scriptz/refs/heads/main/oc"))()',
         description = "Obby Creator Troll Script"
     },
-        {
+    {
         name = "Quiz Script",
         loadstring = 'local CategoryManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Damian-11/quizbot/master/quizbot.luau"))()',
         description = "Lets you do Quizes in the Chat"
     },
-        {
+    {
         name = "Rain Hub Apocalypse Rising 2",
         loadstring = 'loadstring(game:HttpGet("https://raiidev.xyz/rain/loader"))()',
         description = "Best Apocalypse Rising 2 Script but with a Key"
     },
-        {
+    {
         name = "Script Hub",
         loadstring = 'loadstring(game:HttpGet("https://pastebin.com/raw/Wf9z70eE"))()',
         description = "A very old Scripthub (not good)"
     },
-        {
+    {
         name = "Slap Battles",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Slap%20Battles"))()',
         description = "A useful Slap Battles Script"
     },
-        {
+    {
         name = "Steal a Brainrot",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot"))()',
         description = "Steal a Brainrot steal helper"
     },
-        {
+    {
         name = "Steal a Brainrot Auto fuck off",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off"))()',
         description = "Auto Slaps selected Player and stuff"
     },
-        {
+    {
         name = "Teleport Manager",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Teleport%20Manager"))()',
         description = "Lets you teleport to players and copy Coordinates"
     },
-            {
+    {
         name = "Uncopylocker Script",
         loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Uncopylocker%20Script"))()',
         description = "Lets you uncopylock every Game"
     },
-            {
+    {
         name = "Universal Script",
         loadstring = 'loadstring(game:HttpGet("https://pastebin.com/raw/Piw5bqGq"))()',
         description = "Has many Scripts in it"
@@ -356,7 +356,7 @@ notifText.TextWrapped = true
 notifText.Parent = notificationFrame
 
 -- ============================================
--- INTRO ANIMATION (WIEDER HERGESTELLT)
+-- INTRO ANIMATION
 -- ============================================
 local introFrame = Instance.new("Frame")
 introFrame.Name = "IntroFrame"
@@ -457,7 +457,53 @@ local function executeLoadstring(loadstringCode, name)
     end
 end
 
--- Display scripts
+-- ============================================
+-- FILTER FUNKTION (OHNE LÜCKEN)
+-- ============================================
+local function filterFiles()
+    if not searchBox or not listFrame then 
+        return 
+    end
+    
+    local searchText = searchBox.Text:lower()
+    local yPos = 0
+    local visibleCount = 0
+    
+    -- Zuerst alle Frames unsichtbar machen
+    for _, fileFrame in ipairs(listFrame:GetChildren()) do
+        if fileFrame:IsA("Frame") then
+            fileFrame.Visible = false
+        end
+    end
+    
+    -- Dann nur die passenden Frames anzeigen und neu positionieren
+    for _, fileFrame in ipairs(listFrame:GetChildren()) do
+        if fileFrame:IsA("Frame") then
+            local nameLabel = fileFrame:FindFirstChild("ScriptName")
+            
+            if nameLabel and nameLabel:IsA("TextLabel") then
+                -- Prüfen ob der Name den Suchtext enthält
+                if searchText == "" or nameLabel.Text:lower():find(searchText, 1, true) then
+                    -- Frame an die nächste freie Position setzen
+                    fileFrame.Position = UDim2.new(0, 5, 0, yPos)
+                    fileFrame.Visible = true
+                    yPos = yPos + 64
+                    visibleCount = visibleCount + 1
+                end
+            end
+        end
+    end
+    
+    -- CanvasSize anpassen (nur sichtbare Einträge)
+    listFrame.CanvasSize = UDim2.new(0, 0, 0, yPos + 5)
+    
+    -- Nach oben scrollen
+    listFrame.CanvasPosition = Vector2.new(0, 0)
+end
+
+-- ============================================
+-- DISPLAY SCRIPTS
+-- ============================================
 local function displayScripts()
     for _, child in ipairs(listFrame:GetChildren()) do
         if child:IsA("Frame") then
@@ -491,6 +537,7 @@ local function displayScripts()
         icon.Parent = fileFrame
         
         local nameLabel = Instance.new("TextLabel")
+        nameLabel.Name = "ScriptName"
         nameLabel.Size = UDim2.new(1, -170, 0, 20)
         nameLabel.Position = UDim2.new(0, 48, 0, 6)
         nameLabel.BackgroundTransparency = 1
@@ -504,6 +551,7 @@ local function displayScripts()
         
         if script.description then
             local descLabel = Instance.new("TextLabel")
+            descLabel.Name = "ScriptDescription"
             descLabel.Size = UDim2.new(1, -170, 0, 18)
             descLabel.Position = UDim2.new(0, 48, 0, 26)
             descLabel.BackgroundTransparency = 1
@@ -582,49 +630,6 @@ local function displayScripts()
 end
 
 -- ============================================
--- INTRO ANIMATION STARTEN
--- ============================================
-local function playIntro()
-    screenGui.Enabled = true
-    
-    local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    TweenService:Create(introTitle, tweenInfo, {TextTransparency = 0}):Play()
-    task.wait(0.2)
-    
-    TweenService:Create(introSubtitle, tweenInfo, {TextTransparency = 0}):Play()
-    task.wait(0.2)
-    
-    TweenService:Create(versionText, tweenInfo, {TextTransparency = 0}):Play()
-    TweenService:Create(progressBg, tweenInfo, {BackgroundTransparency = 0.7}):Play()
-    
-    local progress = 0
-    while progress < 1 do
-        progress = progress + 0.02
-        progressBar.Size = UDim2.new(progress, 0, 1, 0)
-        progressBar.BackgroundTransparency = 0
-        task.wait(0.03)
-    end
-    
-    task.wait(0.3)
-    
-    local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-    
-    TweenService:Create(introTitle, fadeOutInfo, {TextTransparency = 1}):Play()
-    TweenService:Create(introSubtitle, fadeOutInfo, {TextTransparency = 1}):Play()
-    TweenService:Create(versionText, fadeOutInfo, {TextTransparency = 1}):Play()
-    TweenService:Create(progressBar, fadeOutInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(progressBg, fadeOutInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(introFrame, fadeOutInfo, {BackgroundTransparency = 1}):Play()
-    
-    task.wait(0.5)
-    introFrame:Destroy()
-    
-    -- Scripts anzeigen
-    displayScripts()
-end
-
--- ============================================
 -- GUI FUNKTIONEN
 -- ============================================
 local function animateOpenClose(targetOpen)
@@ -640,20 +645,6 @@ local function animateOpenClose(targetOpen)
         local tween = TweenService:Create(mainFrame, tweenInfo, goal)
         tween:Play()
         isOpen = false
-    end
-end
-
-local function filterFiles()
-    local searchText = searchBox.Text:lower()
-    
-    for _, fileFrame in ipairs(listFrame:GetChildren()) do
-        if fileFrame:IsA("Frame") then
-            local nameLabel = fileFrame:FindFirstChildOfClass("TextLabel")
-            if nameLabel and nameLabel.Text then
-                local visible = searchText == "" or nameLabel.Text:lower():find(searchText, 1, true) ~= nil
-                fileFrame.Visible = visible
-            end
-        end
     end
 end
 
@@ -702,14 +693,95 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-searchBox.Changed:Connect(function(prop)
-    if prop == "Text" then
+-- ============================================
+-- SEARCHBOX EVENTS SETUP
+-- ============================================
+local function setupSearchEvents()
+    -- Kleine Verzögerung um sicherzustellen dass alles geladen ist
+    task.wait(0.1)
+    
+    if searchBox then
+        -- Echtzeit-Suche bei jedem Tastendruck
+        searchBox.Changed:Connect(function(prop)
+            if prop == "Text" then
+                filterFiles()
+            end
+        end)
+        
+        -- Bei Enter oder Fokusverlust
+        searchBox.FocusLost:Connect(function()
+            filterFiles()
+        end)
+        
+        -- Initialen Filter anwenden (falls schon Text drin steht)
         filterFiles()
+    else
+        warn("SearchBox konnte nicht gefunden werden! Suche nach...")
+        
+        -- Notfall: Suche nach der SearchBox im gesamten GUI
+        local found = false
+        for _, child in ipairs(contentFrame:GetChildren()) do
+            if child.Name == "SearchFrame" then
+                local box = child:FindFirstChild("SearchBox")
+                if box then
+                    searchBox = box
+                    setupSearchEvents() -- Nochmal versuchen
+                    found = true
+                    break
+                end
+            end
+        end
     end
-end)
+end
 
 -- ============================================
--- START MIT INTRO
+-- INTRO ANIMATION STARTEN
+-- ============================================
+local function playIntro()
+    screenGui.Enabled = true
+    
+    local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    TweenService:Create(introTitle, tweenInfo, {TextTransparency = 0}):Play()
+    task.wait(0.2)
+    
+    TweenService:Create(introSubtitle, tweenInfo, {TextTransparency = 0}):Play()
+    task.wait(0.2)
+    
+    TweenService:Create(versionText, tweenInfo, {TextTransparency = 0}):Play()
+    TweenService:Create(progressBg, tweenInfo, {BackgroundTransparency = 0.7}):Play()
+    
+    local progress = 0
+    while progress < 1 do
+        progress = progress + 0.02
+        progressBar.Size = UDim2.new(progress, 0, 1, 0)
+        progressBar.BackgroundTransparency = 0
+        task.wait(0.03)
+    end
+    
+    task.wait(0.3)
+    
+    local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    
+    TweenService:Create(introTitle, fadeOutInfo, {TextTransparency = 1}):Play()
+    TweenService:Create(introSubtitle, fadeOutInfo, {TextTransparency = 1}):Play()
+    TweenService:Create(versionText, fadeOutInfo, {TextTransparency = 1}):Play()
+    TweenService:Create(progressBar, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(progressBg, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+    TweenService:Create(introFrame, fadeOutInfo, {BackgroundTransparency = 1}):Play()
+    
+    task.wait(0.5)
+    introFrame:Destroy()
+    
+    -- Scripts anzeigen
+    displayScripts()
+    
+    -- Jetzt erst die SearchBox Events verbinden (nachdem alles geladen ist)
+    setupSearchEvents()
+end
+
+-- ============================================
+-- START
 -- ============================================
 playIntro()
 
