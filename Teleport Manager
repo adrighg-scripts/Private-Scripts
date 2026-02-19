@@ -1,3 +1,9 @@
+local ALLOWED_GAME_ID = 8080863905  -- Universe/GameId
+
+task.wait(1) -- wichtig! manchmal ist GameId sonst noch 0
+
+if game.GameId == ALLOWED_GAME_ID then
+
 -- Schönes, kompaktes Teleport GUI + Eigene Koordinaten Anzeige
 -- von ChatGPT erstellt :)
 
@@ -142,7 +148,7 @@ styleUI(coordBox, 8, true)
 local tpBtn = Instance.new("TextButton")
 tpBtn.Size = UDim2.new(0.9,0,0.3,0)
 tpBtn.Position = UDim2.new(0.05,0,0.55,0)
-tpBtn.Text = "Teleport"
+tpBtn.Text = "Teleport (T)"
 tpBtn.BackgroundColor3 = Color3.fromRGB(60,120,60)
 tpBtn.TextColor3 = Color3.fromRGB(255,255,255)
 tpBtn.TextScaled = true
@@ -238,7 +244,7 @@ tabCoords.MouseButton1Click:Connect(function()
 end)
 
 -- Teleport via Koordinaten
-tpBtn.MouseButton1Click:Connect(function()
+local function teleportToCoords()
     local input = coordBox.Text
     local parts = {}
     for value in string.gmatch(input, "([^, ]+)") do
@@ -254,17 +260,28 @@ tpBtn.MouseButton1Click:Connect(function()
         task.wait(1.5)
         coordBox.Text = ""
     end
-end)
+end
+
+tpBtn.MouseButton1Click:Connect(teleportToCoords)
 
 -- Close Button
 closeBtn.MouseButton1Click:Connect(function()
     frame.Visible = false
 end)
 
--- STRG Toggle
+-- R_CTRL Toggle (von L_CTRL geändert)
 userInput.InputBegan:Connect(function(input, processed)
-    if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
+    if not processed and input.KeyCode == Enum.KeyCode.RightControl then
         frame.Visible = not frame.Visible
+    end
+end)
+
+-- T-Taste für Teleport (wenn im Coord-Tab)
+userInput.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.T then
+        if coordPage.Visible then
+            teleportToCoords()
+        end
     end
 end)
 
@@ -288,3 +305,7 @@ myCoords.MouseButton1Click:Connect(function()
         setclipboard(myCoords.Text:gsub("Coords: ", ""))
     end
 end)
+
+else
+    warn("❌ Slap Duels")
+end
