@@ -15,12 +15,12 @@ local SCRIPTS = {
     },
     {
         name = "Aimbot Apocalypse Rising 2",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYW4S5GYZHWLNI4VQ2O2MXNE6Q"))()',
         description = "My Aimbot for Apocalypse Rising 2"
     },
     {
         name = "Aimbot und Esp Apocalypse Rising 2",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYW7QB5LP22GUDE3SJC2MXNFFA"))()',
         description = "My Aimbot and Esp for Apocalypse Rising 2"
     },
     {
@@ -30,7 +30,7 @@ local SCRIPTS = {
     },
     {
         name = "Apocalypse Rising 2 (My)",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Apocalypse%20Rising%202%20(My)?token=GHSAT0AAAAAADVTNJYW5SAPZMZON7MHZPDG2MXNFWA"))()',
         description = "My own Apocalypse Rising 2 Script Hub (unfinished)"
     },
     {
@@ -45,7 +45,7 @@ local SCRIPTS = {
     },
     {
         name = "Build a Boat for a Treasure",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure?token=GHSAT0AAAAAADVTNJYW5PEWZ4MZHJITTQDK2MXNF5A"))()',
         description = "Just a FREE Babft"
     },
     {
@@ -60,17 +60,17 @@ local SCRIPTS = {
     },
     {
         name = "Coordinate",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Coordinate?token=GHSAT0AAAAAADVTNJYXB4XP6TH37KGV555A2MXNGJQ"))()',
         description = "Shows your current Coordinates and you can copy them"
     },
     {
         name = "Delete Parts",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Delete%20Parts?token=GHSAT0AAAAAADVTNJYXOJ25PZ5FTFATXAWM2MXNGUQ"))()',
         description = "Lets you delete Parts and bring them back"
     },
     {
         name = "Esp Apocalypse Rising 2",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Esp%20Apocalypse%20Rising%202?token=GHSAT0AAAAAADVTNJYXICPLX352A6T3GNBK2MXNG5Q"))()',
         description = "Esp for Apocalypse Rising 2"
     },
     {
@@ -90,7 +90,7 @@ local SCRIPTS = {
     },
     {
         name = "Game Id Teller",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Game%20Id%20Teller?token=GHSAT0AAAAAADVTNJYXIFBZNFNZFOCQQAD22MXNHEA"))()',
         description = "Tells you the current Game and Place Id"
     },
     {
@@ -100,12 +100,12 @@ local SCRIPTS = {
     },
     {
         name = "Jerk Scripts",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Jerk%20Scripts?token=GHSAT0AAAAAADVTNJYXWAU2UPDZP5GNKRTI2MXNHLQ"))()',
         description = "Lets you jerk off in R6,R15 and R34"
     },
     {
         name = "Knockout",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Knockout?token=GHSAT0AAAAAADVTNJYXL4PB5L4D5ABGGB7W2MXNHRQ"))()',
         description = "A Knockout auto win script"
     },
     {
@@ -135,27 +135,27 @@ local SCRIPTS = {
     },
     {
         name = "Slap Battles",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Slap%20Battles?token=GHSAT0AAAAAADVTNJYW2TKKI5KCXDH5X7QE2MXNH4A"))()',
         description = "A useful Slap Battles Script"
     },
     {
         name = "Steal a Brainrot",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot?token=GHSAT0AAAAAADVTNJYX4OMY7VXA754AJS522MXNIBQ"))()',
         description = "Steal a Brainrot steal helper"
     },
     {
         name = "Steal a Brainrot Auto fuck off",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off?token=GHSAT0AAAAAADVTNJYX7IY7K4INFRQRFAOG2MXNIKQ"))()',
         description = "Auto Slaps selected Player and stuff"
     },
     {
         name = "Teleport Manager",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Teleport%20Manager?token=GHSAT0AAAAAADVTNJYXPJ4HCJJCJR5V7IJW2MXNIQQ"))()',
         description = "Lets you teleport to players and copy Coordinates"
     },
     {
         name = "Uncopylocker Script",
-        loadstring = 'loadstring(game:HttpGet(""))()',
+        loadstring = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Uncopylocker%20Script?token=GHSAT0AAAAAADVTNJYX65ZDYUM44DLHSRRU2MXNIVA"))()',
         description = "Lets you uncopylock every Game"
     },
     {
