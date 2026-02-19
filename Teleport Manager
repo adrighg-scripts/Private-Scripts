@@ -1,11 +1,4 @@
-local ALLOWED_GAME_ID = 8080863905  -- Universe/GameId
 
-task.wait(1) -- wichtig! manchmal ist GameId sonst noch 0
-
-if game.GameId == ALLOWED_GAME_ID then
-
--- Schönes, kompaktes Teleport GUI + Eigene Koordinaten Anzeige
--- von ChatGPT erstellt :)
 
 local player = game.Players.LocalPlayer
 local players = game:GetService("Players")
@@ -305,7 +298,3 @@ myCoords.MouseButton1Click:Connect(function()
         setclipboard(myCoords.Text:gsub("Coords: ", ""))
     end
 end)
-
-else
-    warn("❌ Slap Duels")
-end
