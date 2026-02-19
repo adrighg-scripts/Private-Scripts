@@ -1,0 +1,12 @@
+﻿local ALLOWED_GAME_ID =  -- GameId
+
+task.wait(1)
+
+if game.GameId == ALLOWED_GAME_ID then
+  
+-- Script here
+
+else
+    warn("❌") --Script Name
+end
+
