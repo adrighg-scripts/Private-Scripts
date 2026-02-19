@@ -1,0 +1,391 @@
+﻿----------------------------------------------------------------------
+-- 🔒 Anti-Duplicate & Flag
+----------------------------------------------------------------------
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Check if script is already running
+if LocalPlayer:FindFirstChild("HighlightScriptRunning") then
+    return
+end
+
+local flag = Instance.new("BoolValue")
+flag.Name = "HighlightScriptRunning"
+flag.Value = true
+flag.Parent = LocalPlayer
+
+local ACTIVE = true
+flag.Destroying:Connect(function()
+    ACTIVE = false
+end)
+
+print("Highlight Script started.")
+
+----------------------------------------------------------------------
+-- ✨ Settings
+----------------------------------------------------------------------
+local SHOW_METERS = true
+local SHOW_NAMES = false
+local PAUSED = false
+local STUD_TO_M = 0.28
+
+----------------------------------------------------------------------
+-- 🔦 X-RAY Settings & Variables
+----------------------------------------------------------------------
+local XRAY_ACTIVE = false
+local TARGET_TRANSPARENCY = 0.8
+local IGNORE_THRESHOLD = 0.8
+local affectedParts = {}
+
+----------------------------------------------------------------------
+-- 🔹 Highlight & UI Functions
+----------------------------------------------------------------------
+local function addHighlight(character)
+    if character and not character:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "Highlight"
+        highlight.FillColor = Color3.fromRGB(255,255,255)
+        highlight.OutlineColor = Color3.fromRGB(255,255,255)
+        highlight.Parent = character
+    end
+end
+
+local function removeHighlight(character)
+    if character and character:FindFirstChild("Highlight") then
+        character.Highlight:Destroy()
+    end
+end
+
+local function getPlayerName(player)
+    -- Check leaderstats first
+    if player:FindFirstChild("leaderstats") then
+        local leaderstats = player.leaderstats
+        -- Check various possible stats
+        if leaderstats:FindFirstChild("Name") then
+            return leaderstats.Name.Value
+        elseif leaderstats:FindFirstChild("Username") then
+            return leaderstats.Username.Value
+        elseif leaderstats:FindFirstChild("PlayerName") then
+            return leaderstats.PlayerName.Value
+        end
+    end
+    
+    -- Check DisplayName
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.DisplayName ~= "" then
+            return humanoid.DisplayName
+        end
+    end
+    
+    -- Fallback to player name
+    return player.Name
+end
+
+local function createCombinedLabel(character, player)
+    if not character:FindFirstChild("Head") then return end
+    local head = character.Head
+    
+    -- Remove old label if exists
+    if head:FindFirstChild("CombinedGui") then
+        head.CombinedGui:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "CombinedGui"
+    billboard.Size = UDim2.new(0, 200, 0, 25) -- Larger GUI for both texts
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+
+    -- Container for both texts
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    -- UIListLayout for horizontal arrangement
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5) -- 5 pixel spacing between name and distance
+    layout.Parent = container
+
+    -- Name Label (smaller font)
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0) -- Automatic width
+    nameText.AutomaticSize = Enum.AutomaticSize.X -- Fits content
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = Color3.fromRGB(255, 255, 0)
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextScaled = false
+    nameText.TextSize = 14 -- Smaller font for names
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = getPlayerName(player)
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    -- Distance Label (normal font)
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0) -- Automatic width
+    distanceText.AutomaticSize = Enum.AutomaticSize.X -- Fits content
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextScaled = false
+    distanceText.TextSize = 16 -- Normal font for distance
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function removeCombinedLabel(character)
+    if character and character:FindFirstChild("Head") then
+        local head = character.Head
+        if head:FindFirstChild("CombinedGui") then
+            head.CombinedGui:Destroy()
+        end
+    end
+end
+
+----------------------------------------------------------------------
+-- 🔦 X-RAY Functions
+----------------------------------------------------------------------
+local function shouldIgnorePart(part)
+    -- Ignore player parts and already transparent parts (>= 0.5)
+    return part.Transparency >= IGNORE_THRESHOLD
+end
+
+local function toggleXRay()
+    if not XRAY_ACTIVE then
+        -- Enable X-Ray
+        affectedParts = {}
+        local changedCount = 0
+        local ignoredCount = 0
+        
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                -- Check if part should be ignored
+                if not shouldIgnorePart(obj) then
+                    -- Check if part belongs to any player
+                    local isPlayerPart = false
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player.Character and obj:IsDescendantOf(player.Character) then
+                            isPlayerPart = true
+                            break
+                        end
+                    end
+                    
+                    -- Only affect non-player parts
+                    if not isPlayerPart then
+                        affectedParts[obj] = obj.Transparency
+                        obj.Transparency = TARGET_TRANSPARENCY
+                        changedCount = changedCount + 1
+                    end
+                else
+                    ignoredCount = ignoredCount + 1
+                end
+            end
+        end
+        
+        XRAY_ACTIVE = true
+        print(string.format("X-Ray ENABLED: %d parts changed, %d parts ignored (Transparency >= 0.8)", changedCount, ignoredCount))
+    else
+        -- Disable X-Ray
+        local restoredCount = 0
+        for part, transparency in pairs(affectedParts) do
+            if part and part.Parent then
+                part.Transparency = transparency
+                restoredCount = restoredCount + 1
+            end
+        end
+        
+        affectedParts = {}
+        XRAY_ACTIVE = false
+        print(string.format("X-Ray DISABLED: %d parts restored", restoredCount))
+    end
+end
+
+-- Reset X-Ray when leaving
+game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == LocalPlayer and XRAY_ACTIVE then
+        toggleXRay()
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Player Setup
+----------------------------------------------------------------------
+local function setupPlayer(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            task.wait(1) -- More time for leaderstats to load
+            if not ACTIVE then return end
+            addHighlight(char)
+            if SHOW_NAMES or SHOW_METERS then
+                createCombinedLabel(char, player)
+            end
+        end)
+        
+        if player.Character then
+            task.wait(1)
+            addHighlight(player.Character)
+            if SHOW_NAMES or SHOW_METERS then
+                createCombinedLabel(player.Character, player)
+            end
+        end
+    end
+end
+
+-- Initial setup for all players
+for _, player in pairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+
+----------------------------------------------------------------------
+-- 🔹 Live Update Loop
+----------------------------------------------------------------------
+local updateConnection
+updateConnection = RunService.RenderStepped:Connect(function()
+    if not ACTIVE then
+        if updateConnection then
+            updateConnection:Disconnect()
+        end
+        return
+    end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        local char = player.Character
+        if player ~= LocalPlayer and char and char:FindFirstChild("Head") then
+            local head = char.Head
+
+            -- Combined Label Update
+            if (SHOW_NAMES or SHOW_METERS) and not PAUSED then
+                local combinedGui = createCombinedLabel(char, player)
+                if combinedGui then
+                    combinedGui.Enabled = true
+                    
+                    local container = combinedGui:FindFirstChild("Container")
+                    if container then
+                        local nameText = container:FindFirstChild("NameText")
+                        local distanceText = container:FindFirstChild("DistanceText")
+                        
+                        -- Show/hide name
+                        if nameText then
+                            nameText.Visible = SHOW_NAMES
+                            if SHOW_NAMES then
+                                nameText.Text = getPlayerName(player)
+                            end
+                        end
+                        
+                        -- Show/hide and update distance
+                        if distanceText then
+                            distanceText.Visible = SHOW_METERS
+                            if SHOW_METERS then
+                                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                local theirRoot = char:FindFirstChild("HumanoidRootPart")
+                                if myRoot and theirRoot then
+                                    local distStuds = (myRoot.Position - theirRoot.Position).Magnitude
+                                    local distMeters = distStuds * STUD_TO_M
+                                    distanceText.Text = string.format("%.1f m", distMeters)
+                                end
+                            else
+                                distanceText.Text = ""
+                            end
+                        end
+                    end
+                end
+            elseif head:FindFirstChild("CombinedGui") then
+                head.CombinedGui.Enabled = false
+            end
+            
+            -- Highlight Update
+            if not PAUSED then
+                addHighlight(char)
+            else
+                removeHighlight(char)
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Keyboard Inputs (F1/F2/F3/F4/F8)
+----------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not ACTIVE then return end
+    
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.F1 then
+            SHOW_METERS = not SHOW_METERS
+            print("Distance display: " .. (SHOW_METERS and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F2 then
+            SHOW_NAMES = not SHOW_NAMES
+            print("Name display: " .. (SHOW_NAMES and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F3 then
+            PAUSED = not PAUSED
+            print("Pause: " .. (PAUSED and "ON" or "OFF"))
+            
+        elseif input.KeyCode == Enum.KeyCode.F4 then
+            -- Close everything + completely disable script
+            ACTIVE = false
+            PAUSED = true
+
+            for _, player in pairs(Players:GetPlayers()) do
+                local char = player.Character
+                if char then
+                    removeHighlight(char)
+                    removeCombinedLabel(char)
+                end
+            end
+
+            if flag then 
+                flag:Destroy() 
+            end
+            
+            if updateConnection then
+                updateConnection:Disconnect()
+                updateConnection = nil
+            end
+            
+            print("Highlight Script completely terminated.")
+            
+        elseif input.KeyCode == Enum.KeyCode.F8 then
+            -- Toggle X-Ray
+            toggleXRay()
+        end
+    end
+end)
+
+-- Create initial labels for existing players
+task.wait(2) -- More time for leaderstats to load
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer and player.Character then
+        if SHOW_NAMES or SHOW_METERS then
+            createCombinedLabel(player.Character, player)
+        end
+    end
+end
+
+print("Script fully loaded. Controls:")
+print("F1 = Distance display")
+print("F2 = Name display") 
+print("F3 = Pause highlights")
+print("F4 = Terminate script")
+print("F8 = Toggle X-Ray (makes non-player parts with transparency < 0.5 see-through)")

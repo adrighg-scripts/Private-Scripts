@@ -1,0 +1,2186 @@
+﻿-- Ultimate Cheat Suite UI with Aim Assist, Visuals (ESP) and Head Expander
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local mouse = LocalPlayer:GetMouse()
+
+-- Rayfield UI Load
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Messages for Loading Screen
+local Messages = {
+    "Aim Bot included🎯",
+    "ESP included 👁️",
+    "Head Expander included 🧠",
+    "Free Rain Hub Version ⚡",
+    "Ready to be Sigma 😈",
+    "Kill everyone 🏆",
+    "Made unstoppable 💪",
+    "Cheats loaded 🔧"
+}
+local ChosenMessage = Messages[math.random(1, #Messages)]
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Rain Hub Free Version",
+    Icon = 107904589783906,
+    LoadingTitle = "Rain Hub Free Version",
+    LoadingSubtitle = ChosenMessage,
+    Theme = "Default",
+    DisableRayfieldPrompts = true,
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "UltimateCheatConfigs",
+        FileName = "Configuration",
+    },
+})
+
+-- Create Tabs
+local AimTab = Window:CreateTab("Aim Assist", "target")
+local VisualsTab = Window:CreateTab("Visuals", "eye")
+local PlayerTab = Window:CreateTab("Player", "user")
+local SettingsTab = Window:CreateTab("Settings", "settings")
+
+-- Variables for Aim Assist
+local aimEnabled = false
+local aiming = false
+local aimConnection = nil
+local currentTarget = nil
+local lockedTarget = nil
+
+-- Head Expander Variables
+local headExpanderEnabled = false
+local headExpanderConnection = nil
+local originalHeadSizes = {}
+local originalHeadCollisions = {}
+
+-- Player Movement Variables
+local infiniteJumpEnabled = false
+local infiniteJumpConnection = nil
+local noFallDamageEnabled = false
+local noCameraFlinchEnabled = false
+local jumpHeight = 50
+local noJumpDebounceEnabled = false
+local mapEspEnabled = false
+local zombieEspEnabled = false
+
+-- Walk Speed Variables
+local normalWalkSpeed = 16
+local sprintWalkSpeed = 35
+local currentWalkSpeed = 16
+local walkSpeedEnabled = false
+local walkSpeedConnection = nil
+local isSprinting = false
+
+-- Visuals/ESP Variables
+local playerEspEnabled = false
+local vehicleEspEnabled = false
+local STUD_TO_M = 0.28
+local PAUSED = false
+
+-- Zombie ESP Variables
+local zombieEspConnection = nil
+local zombieHighlights = {}
+local zombieGuis = {}
+local MAX_ZOMBIE_DISTANCE = 500
+local ZOMBIE_NAME_COLOR = Color3.fromRGB(0, 255, 0) -- Grün für Zombies
+
+-- Player Visuals storage
+local playerHighlights = {}
+local playerGuis = {}
+
+-- Vehicle ESP Variables
+local vehicleEspConnection = nil
+local vehicleHighlights = {}
+local vehicleGuis = {}
+local MAX_VEHICLE_DISTANCE = 500
+
+-- X-RAY Variables
+local XRAY_ACTIVE = false
+local TARGET_TRANSPARENCY = 0.8
+local IGNORE_THRESHOLD = 0.8
+local affectedParts = {}
+
+-- Map ESP Variables
+local mapEspConnection = nil
+local originalMapParts = {}
+
+-- FOV Circle Drawing
+local ESPCircle = nil
+local function createFOVCircle()
+    if ESPCircle then ESPCircle:Remove() end
+    
+    local circle = Drawing.new("Circle")
+    circle.Visible = false
+    circle.Thickness = 1
+    circle.Color = Color3.fromRGB(255, 255, 255)
+    circle.Transparency = 0.7
+    circle.Filled = false
+    circle.Radius = 100
+    
+    ESPCircle = circle
+    return circle
+end
+
+local function updateFOVCircle()
+    if not ESPCircle then return end
+    
+    local camera = workspace.CurrentCamera
+    ESPCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    ESPCircle.Visible = aimEnabled
+    ESPCircle.Radius = Rayfield.Flags.AimFOV and Rayfield.Flags.AimFOV.CurrentValue or 100
+end
+
+-- AIM ASSIST FUNCTIONS --
+function findNearestPlayer()
+    local closestPlayer = nil
+    local closestDistance = Rayfield.Flags.AimFOV and Rayfield.Flags.AimFOV.CurrentValue or 100
+    local closestHead = nil
+    
+    local camera = workspace.CurrentCamera
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+            local humanoid = otherPlayer.Character:FindFirstChild("Humanoid")
+            local targetPart = nil
+            
+            local targetPartName = Rayfield.Flags.TargetPart and Rayfield.Flags.TargetPart.CurrentOption[1] or "Head"
+            if targetPartName == "Head" then
+                targetPart = otherPlayer.Character:FindFirstChild("Head")
+            elseif targetPartName == "HumanoidRootPart" then
+                targetPart = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+            elseif targetPartName == "Torso" then
+                targetPart = otherPlayer.Character:FindFirstChild("Torso") or otherPlayer.Character:FindFirstChild("UpperTorso")
+            end
+            
+            if humanoid and humanoid.Health > 0 and targetPart then
+                local screenPoint, visible = camera:WorldToScreenPoint(targetPart.Position)
+                
+                if visible then
+                    local playerScreenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                    local distance = (playerScreenPos - screenCenter).Magnitude
+                    
+                    if distance <= closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                        closestHead = targetPart
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer, closestHead
+end
+
+function permanentAim()
+    if not aiming then return end
+    
+    if lockedTarget and lockedTarget.Parent then
+        local humanoid = lockedTarget.Parent:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            currentTarget = lockedTarget
+        else
+            lockedTarget = nil
+            currentTarget = nil
+            return
+        end
+    elseif not currentTarget then
+        local targetPlayer, targetHead = findNearestPlayer()
+        if targetPlayer and targetHead then
+            currentTarget = targetHead
+            lockedTarget = targetHead
+        else
+            return
+        end
+    end
+    
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local targetPlayer = Players:GetPlayerFromCharacter(currentTarget.Parent)
+    if not targetPlayer then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local humanoid = currentTarget.Parent:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local screenPoint = workspace.CurrentCamera:WorldToScreenPoint(currentTarget.Position)
+    local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
+    
+    local currentMousePos = Vector2.new(mouse.X, mouse.Y)
+    local direction = (targetPos - currentMousePos)
+    
+    local speed = Rayfield.Flags.AimSpeed and Rayfield.Flags.AimSpeed.CurrentValue or 0.3
+    local step = direction * speed
+    
+    pcall(function()
+        mousemoverel(step.X, step.Y)
+    end)
+end
+
+-- HEAD EXPANDER FUNCTIONS --
+local function expandHead(character, size)
+    if not character then return end
+    
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+    
+    if not originalHeadSizes[character] then
+        originalHeadSizes[character] = head.Size
+        originalHeadCollisions[character] = head.CanCollide
+    end
+    
+    head.Size = Vector3.new(size, size, size)
+    head.CanCollide = true
+end
+
+local function restoreHead(character)
+    if not character then return end
+    
+    if originalHeadSizes[character] then
+        local head = character:FindFirstChild("Head")
+        if head then
+            head.Size = originalHeadSizes[character]
+            head.CanCollide = originalHeadCollisions[character] or false
+        end
+        originalHeadSizes[character] = nil
+        originalHeadCollisions[character] = nil
+    end
+end
+
+local function updateAllHeads()
+    if not headExpanderEnabled then return end
+    
+    local headSize = Rayfield.Flags.HeadSize and Rayfield.Flags.HeadSize.CurrentValue or 5
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            expandHead(player.Character, headSize)
+        end
+    end
+end
+
+local function toggleHeadExpander(state)
+    headExpanderEnabled = state
+    
+    if state then
+        updateAllHeads()
+        headExpanderConnection = RunService.Heartbeat:Connect(updateAllHeads)
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            player.CharacterAdded:Connect(function(character)
+                task.wait(0.1)
+                if headExpanderEnabled and player ~= LocalPlayer then
+                    expandHead(character, Rayfield.Flags.HeadSize and Rayfield.Flags.HeadSize.CurrentValue or 5)
+                end
+            end)
+        end
+    else
+        if headExpanderConnection then
+            headExpanderConnection:Disconnect()
+            headExpanderConnection = nil
+        end
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                restoreHead(player.Character)
+            end
+        end
+        
+        originalHeadSizes = {}
+        originalHeadCollisions = {}
+    end
+end
+
+-- NO FALL DAMAGE FUNCTION --
+local function toggleNoFallDamage(state)
+    noFallDamageEnabled = state
+    
+    if state then
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            end
+        end
+        
+        -- Connect to character added
+        LocalPlayer.CharacterAdded:Connect(function(character)
+            task.wait(0.1)
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid and noFallDamageEnabled then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            end
+        end)
+    else
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            end
+        end
+    end
+end
+
+-- NO CAMERA FLINCH FUNCTION --
+local function toggleNoCameraFlinch(state)
+    noCameraFlinchEnabled = state
+    
+    -- Diese Funktion würde normalerweise die Kamera-Shake-Effekte deaktivieren
+    -- In Apocalypse Rising 2 müsste man hier spezifische Kamera-Funktionen hooken
+    if state then
+        print("No Camera Flinch aktiviert - Kamera-Wackeln deaktiviert")
+    else
+        print("No Camera Flinch deaktiviert")
+    end
+end
+
+-- JUMP HEIGHT FUNCTION --
+local function updateJumpHeight()
+    if not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    humanoid.JumpHeight = jumpHeight
+end
+
+local function toggleJumpHeight(state)
+    if state then
+        updateJumpHeight()
+        -- Connect to character added
+        LocalPlayer.CharacterAdded:Connect(function(character)
+            task.wait(0.1)
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpHeight = jumpHeight
+            end
+        end)
+    else
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpHeight = 4.8 -- Standardwert
+            end
+        end
+    end
+end
+
+-- NO JUMP DEBOUNCE FUNCTION --
+local function toggleNoJumpDebounce(state)
+    noJumpDebounceEnabled = state
+    
+    if state then
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- Versuche JumpPower zu erhöhen für schnellere Sprünge
+                humanoid.JumpPower = 100
+            end
+        end
+    else
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = 50 -- Standardwert
+            end
+        end
+    end
+end
+
+-- INFINITE JUMP FUNCTIONS --
+local function toggleInfiniteJump(state)
+    infiniteJumpEnabled = state
+    
+    if state then
+        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+            if LocalPlayer.Character then
+                local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState("Jumping")
+                end
+            end
+        end)
+    else
+        if infiniteJumpConnection then
+            infiniteJumpConnection:Disconnect()
+            infiniteJumpConnection = nil
+        end
+    end
+end
+
+-- WALK SPEED FUNCTIONS --
+local function updateWalkSpeed()
+    if not walkSpeedEnabled or not LocalPlayer.Character then return end
+    
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- Check if shift is pressed for sprinting
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
+        isSprinting = true
+        currentWalkSpeed = sprintWalkSpeed
+    else
+        isSprinting = false
+        currentWalkSpeed = normalWalkSpeed
+    end
+    
+    humanoid.WalkSpeed = currentWalkSpeed
+end
+
+local function toggleWalkSpeed(state)
+    walkSpeedEnabled = state
+    
+    if state then
+        -- Apply initial walk speed
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = currentWalkSpeed
+            end
+        end
+        
+        -- Connect to update walk speed
+        walkSpeedConnection = RunService.Heartbeat:Connect(updateWalkSpeed)
+        
+        -- Connect to character added
+        LocalPlayer.CharacterAdded:Connect(function(character)
+            task.wait(0.1)
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid and walkSpeedEnabled then
+                humanoid.WalkSpeed = currentWalkSpeed
+            end
+        end)
+    else
+        if walkSpeedConnection then
+            walkSpeedConnection:Disconnect()
+            walkSpeedConnection = nil
+        end
+        
+        -- Restore default walk speed
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16 -- Default Roblox walk speed
+            end
+        end
+    end
+end
+
+-- VISUALS/ESP FUNCTIONS --
+local function getPlayerName(player)
+    if player:FindFirstChild("leaderstats") then
+        local leaderstats = player.leaderstats
+        if leaderstats:FindFirstChild("Name") then
+            return leaderstats.Name.Value
+        elseif leaderstats:FindFirstChild("Username") then
+            return leaderstats.Username.Value
+        elseif leaderstats:FindFirstChild("PlayerName") then
+            return leaderstats.PlayerName.Value
+        end
+    end
+    
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.DisplayName ~= "" then
+            return humanoid.DisplayName
+        end
+    end
+    
+    return player.Name
+end
+
+-- Color and settings variables
+local PLAYER_ESP_COLOR = Color3.fromRGB(255, 255, 255)
+local PLAYER_FILL_TRANSPARENCY = 0.5
+local SHOW_PLAYER_NAMES = true
+local SHOW_PLAYER_DISTANCE = true
+local SHOW_VEHICLE_DISTANCE = true
+local SHOW_ZOMBIE_DISTANCE = true
+local VEHICLE_NAME_COLOR = Color3.fromRGB(0, 120, 255)
+
+local function addPlayerHighlight(char)
+    if not char or not char:IsDescendantOf(workspace) then return nil end
+    
+    if char:FindFirstChild("PlayerHighlight") then
+        char.PlayerHighlight:Destroy()
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "PlayerHighlight"
+    highlight.FillColor = PLAYER_ESP_COLOR
+    highlight.OutlineColor = PLAYER_ESP_COLOR
+    highlight.FillTransparency = PLAYER_FILL_TRANSPARENCY
+    highlight.OutlineTransparency = 0
+    highlight.Parent = char
+    
+    return highlight
+end
+
+local function addVehicleHighlight(vehicle)
+    if not vehicle or not vehicle:IsDescendantOf(workspace) then return nil end
+    
+    if vehicle:FindFirstChild("VehicleHighlight") then
+        vehicle.VehicleHighlight:Destroy()
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "VehicleHighlight"
+    highlight.FillColor = Color3.fromRGB(0, 255, 0)
+    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+    highlight.FillTransparency = 0.3
+    highlight.OutlineTransparency = 0
+    highlight.Parent = vehicle
+    
+    return highlight
+end
+
+local function addZombieHighlight(zombie)
+    if not zombie or not zombie:IsDescendantOf(workspace) then return nil end
+    
+    if zombie:FindFirstChild("ZombieHighlight") then
+        zombie.ZombieHighlight:Destroy()
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ZombieHighlight"
+    highlight.FillColor = ZOMBIE_NAME_COLOR
+    highlight.OutlineColor = ZOMBIE_NAME_COLOR
+    highlight.FillTransparency = 0.3
+    highlight.OutlineTransparency = 0
+    highlight.Parent = zombie
+    
+    return highlight
+end
+
+local function removeHighlight(object)
+    if object and object:FindFirstChild("PlayerHighlight") then
+        object.PlayerHighlight:Destroy()
+    end
+    if object and object:FindFirstChild("VehicleHighlight") then
+        object.VehicleHighlight:Destroy()
+    end
+    if object and object:FindFirstChild("ZombieHighlight") then
+        object.ZombieHighlight:Destroy()
+    end
+end
+
+local function createPlayerLabel(char, player)
+    if not char or not char:FindFirstChild("Head") then return nil end
+    
+    local head = char.Head
+    
+    if head:FindFirstChild("PlayerLabel") then
+        head.PlayerLabel:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "PlayerLabel"
+    billboard.Size = UDim2.new(0, 200, 0, 25)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = head
+    billboard.Parent = head
+
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = container
+
+    -- Name Label
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0)
+    nameText.AutomaticSize = Enum.AutomaticSize.X
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = Color3.fromRGB(255, 255, 0)
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextScaled = false
+    nameText.TextSize = 14
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = getPlayerName(player)
+    nameText.Visible = SHOW_PLAYER_NAMES
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    -- Distance Label
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0)
+    distanceText.AutomaticSize = Enum.AutomaticSize.X
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextScaled = false
+    distanceText.TextSize = 16
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.Visible = SHOW_PLAYER_DISTANCE
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function createVehicleLabel(vehicle)
+    if not vehicle then return nil end
+    
+    local primaryPart = vehicle.PrimaryPart or vehicle:FindFirstChildWhichIsA("BasePart")
+    if not primaryPart then return nil end
+    
+    if primaryPart:FindFirstChild("VehicleLabel") then
+        primaryPart.VehicleLabel:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "VehicleLabel"
+    billboard.Size = UDim2.new(0, 200, 0, 25)
+    billboard.StudsOffset = Vector3.new(0, primaryPart.Size.Y + 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = primaryPart
+    billboard.Parent = primaryPart
+
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = container
+
+    -- Name Label - BLUE for vehicles
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0)
+    nameText.AutomaticSize = Enum.AutomaticSize.X
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = VEHICLE_NAME_COLOR -- BLUE
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextScaled = false
+    nameText.TextSize = 14
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = vehicle.Name
+    nameText.Visible = true
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    -- Distance Label
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0)
+    distanceText.AutomaticSize = Enum.AutomaticSize.X
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextScaled = false
+    distanceText.TextSize = 16
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.Visible = SHOW_VEHICLE_DISTANCE
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function createZombieLabel(zombie)
+    if not zombie then return nil end
+    
+    local primaryPart = zombie.PrimaryPart or zombie:FindFirstChildWhichIsA("BasePart")
+    if not primaryPart then return nil end
+    
+    if primaryPart:FindFirstChild("ZombieLabel") then
+        primaryPart.ZombieLabel:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ZombieLabel"
+    billboard.Size = UDim2.new(0, 200, 0, 25)
+    billboard.StudsOffset = Vector3.new(0, primaryPart.Size.Y + 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Adornee = primaryPart
+    billboard.Parent = primaryPart
+
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = container
+
+    -- Name Label - GRÜN für Zombies
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0)
+    nameText.AutomaticSize = Enum.AutomaticSize.X
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = ZOMBIE_NAME_COLOR -- GRÜN
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextScaled = false
+    nameText.TextSize = 14
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = zombie.Name
+    nameText.Visible = true
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    -- Distance Label
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0)
+    distanceText.AutomaticSize = Enum.AutomaticSize.X
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextScaled = false
+    distanceText.TextSize = 16
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.Visible = SHOW_ZOMBIE_DISTANCE
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function removeLabel(object)
+    if object and object:FindFirstChild("Head") then
+        local head = object.Head
+        if head and head:FindFirstChild("PlayerLabel") then
+            head.PlayerLabel:Destroy()
+        end
+    end
+    
+    if object then
+        local primaryPart = object.PrimaryPart or object:FindFirstChildWhichIsA("BasePart")
+        if primaryPart then
+            if primaryPart:FindFirstChild("VehicleLabel") then
+                primaryPart.VehicleLabel:Destroy()
+            end
+            if primaryPart:FindFirstChild("ZombieLabel") then
+                primaryPart.ZombieLabel:Destroy()
+            end
+        end
+    end
+end
+
+-- X-RAY FUNCTIONS --
+local function shouldIgnorePart(part)
+    return part.Transparency >= IGNORE_THRESHOLD
+end
+
+local function toggleXRay()
+    if not XRAY_ACTIVE then
+        affectedParts = {}
+        local changedCount = 0
+        local ignoredCount = 0
+        
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                if not shouldIgnorePart(obj) then
+                    local isPlayerPart = false
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player.Character and obj:IsDescendantOf(player.Character) then
+                            isPlayerPart = true
+                            break
+                        end
+                    end
+                    
+                    if not isPlayerPart then
+                        affectedParts[obj] = obj.Transparency
+                        obj.Transparency = TARGET_TRANSPARENCY
+                        changedCount = changedCount + 1
+                    end
+                else
+                    ignoredCount = ignoredCount + 1
+                end
+            end
+        end
+        
+        XRAY_ACTIVE = true
+        print(string.format("X-Ray ENABLED: %d parts changed, %d parts ignored", changedCount, ignoredCount))
+    else
+        local restoredCount = 0
+        for part, transparency in pairs(affectedParts) do
+            if part and part.Parent then
+                part.Transparency = transparency
+                restoredCount = restoredCount + 1
+            end
+        end
+        
+        affectedParts = {}
+        XRAY_ACTIVE = false
+        print(string.format("X-Ray DISABLED: %d parts restored", restoredCount))
+    end
+end
+
+-- Update Player Visuals
+local lastPlayerUpdate = 0
+local PLAYER_UPDATE_INTERVAL = 0.2
+
+local function updatePlayerVisuals()
+    if PAUSED or not playerEspEnabled then return end
+    
+    local currentTime = tick()
+    if currentTime - lastPlayerUpdate < PLAYER_UPDATE_INTERVAL then return end
+    lastPlayerUpdate = currentTime
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    
+                    -- Update or create highlight
+                    local highlight = char:FindFirstChild("PlayerHighlight")
+                    if not highlight then
+                        highlight = addPlayerHighlight(char)
+                        playerHighlights[player] = highlight
+                    else
+                        -- Update highlight color and transparency
+                        highlight.FillColor = PLAYER_ESP_COLOR
+                        highlight.OutlineColor = PLAYER_ESP_COLOR
+                        highlight.FillTransparency = PLAYER_FILL_TRANSPARENCY
+                    end
+                    
+                    -- Update or create label
+                    local label = char:FindFirstChild("Head") and char.Head:FindFirstChild("PlayerLabel")
+                    if not label then
+                        label = createPlayerLabel(char, player)
+                        playerGuis[player] = label
+                    else
+                        -- Update label visibility
+                        local container = label:FindFirstChild("Container")
+                        if container then
+                            local nameText = container:FindFirstChild("NameText")
+                            local distanceText = container:FindFirstChild("DistanceText")
+                            
+                            if nameText then
+                                nameText.Visible = SHOW_PLAYER_NAMES
+                            end
+                            if distanceText then
+                                distanceText.Visible = SHOW_PLAYER_DISTANCE
+                                if SHOW_PLAYER_DISTANCE and myRoot then
+                                    local distStuds = (myRoot.Position - root.Position).Magnitude
+                                    local distMeters = distStuds * STUD_TO_M
+                                    distanceText.Text = string.format("%.1f m", distMeters)
+                                else
+                                    distanceText.Text = ""
+                                end
+                            end
+                        end
+                    end
+                else
+                    removeHighlight(char)
+                    removeLabel(char)
+                end
+            else
+                if playerHighlights[player] then
+                    removeHighlight(playerHighlights[player].Parent)
+                    playerHighlights[player] = nil
+                end
+                if playerGuis[player] then
+                    removeLabel(playerGuis[player].Parent)
+                    playerGuis[player] = nil
+                end
+            end
+        end
+    end
+end
+
+-- Update Vehicle ESP
+local lastVehicleUpdate = 0
+local VEHICLE_UPDATE_INTERVAL = 0.3
+
+local function updateVehicleESP()
+    if PAUSED or not vehicleEspEnabled then return end
+    
+    local currentTime = tick()
+    if currentTime - lastVehicleUpdate < VEHICLE_UPDATE_INTERVAL then return end
+    lastVehicleUpdate = currentTime
+    
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    
+    if not workspace:FindFirstChild("Vehicles") then
+        return
+    end
+    
+    local maxDistance = MAX_VEHICLE_DISTANCE
+    
+    for _, vehicle in pairs(workspace.Vehicles:GetChildren()) do
+        if vehicle:IsA("Model") then
+            local primaryPart = vehicle.PrimaryPart or vehicle:FindFirstChildWhichIsA("BasePart")
+            if primaryPart then
+                local distance = (myRoot.Position - primaryPart.Position).Magnitude
+                
+                if distance <= maxDistance then
+                    -- Update or create highlight
+                    local highlight = vehicle:FindFirstChild("VehicleHighlight")
+                    if not highlight then
+                        highlight = addVehicleHighlight(vehicle)
+                        vehicleHighlights[vehicle.Name] = highlight
+                    end
+                    
+                    -- Update or create label
+                    local label = (primaryPart:FindFirstChild("VehicleLabel") or vehicle:FindFirstChild("VehicleLabel"))
+                    if not label then
+                        label = createVehicleLabel(vehicle)
+                        vehicleGuis[vehicle.Name] = label
+                    else
+                        -- Update distance text visibility
+                        local container = label:FindFirstChild("Container")
+                        if container then
+                            local distanceText = container:FindFirstChild("DistanceText")
+                            if distanceText then
+                                distanceText.Visible = SHOW_VEHICLE_DISTANCE
+                                if SHOW_VEHICLE_DISTANCE then
+                                    local distMeters = distance * STUD_TO_M
+                                    distanceText.Text = string.format("%.1f m", distMeters)
+                                else
+                                    distanceText.Text = ""
+                                end
+                            end
+                        end
+                    end
+                else
+                    removeHighlight(vehicle)
+                    removeLabel(vehicle)
+                    vehicleHighlights[vehicle.Name] = nil
+                    vehicleGuis[vehicle.Name] = nil
+                end
+            end
+        end
+    end
+    
+    -- Clean up old vehicles
+    for vehicleName, _ in pairs(vehicleHighlights) do
+        if not workspace.Vehicles:FindFirstChild(vehicleName) then
+            local vehicle = workspace.Vehicles[vehicleName]
+            if vehicle then
+                removeHighlight(vehicle)
+                removeLabel(vehicle)
+            end
+            vehicleHighlights[vehicleName] = nil
+            vehicleGuis[vehicleName] = nil
+        end
+    end
+end
+
+-- Update Zombie ESP
+local lastZombieUpdate = 0
+local ZOMBIE_UPDATE_INTERVAL = 0.3
+
+local function updateZombieESP()
+    if PAUSED or not zombieEspEnabled then return end
+    
+    local currentTime = tick()
+    if currentTime - lastZombieUpdate < ZOMBIE_UPDATE_INTERVAL then return end
+    lastZombieUpdate = currentTime
+    
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    
+    -- Suche nach Zombies im Workspace
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and (obj.Name:lower():find("zombie") or obj.Name:lower():find("infected") or obj.Name:lower():find("walker")) then
+            local primaryPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            if primaryPart then
+                local distance = (myRoot.Position - primaryPart.Position).Magnitude
+                
+                if distance <= MAX_ZOMBIE_DISTANCE then
+                    -- Update or create highlight
+                    local highlight = obj:FindFirstChild("ZombieHighlight")
+                    if not highlight then
+                        highlight = addZombieHighlight(obj)
+                        zombieHighlights[obj.Name] = highlight
+                    end
+                    
+                    -- Update or create label
+                    local label = (primaryPart:FindFirstChild("ZombieLabel") or obj:FindFirstChild("ZombieLabel"))
+                    if not label then
+                        label = createZombieLabel(obj)
+                        zombieGuis[obj.Name] = label
+                    else
+                        -- Update distance text
+                        local container = label:FindFirstChild("Container")
+                        if container then
+                            local nameText = container:FindFirstChild("NameText")
+                            local distanceText = container:FindFirstChild("DistanceText")
+                            
+                            if nameText then
+                                nameText.Text = obj.Name
+                                nameText.TextColor3 = ZOMBIE_NAME_COLOR
+                            end
+                            
+                            if distanceText then
+                                distanceText.Visible = SHOW_ZOMBIE_DISTANCE
+                                if SHOW_ZOMBIE_DISTANCE then
+                                    local distMeters = distance * STUD_TO_M
+                                    distanceText.Text = string.format("%.1f m", distMeters)
+                                    distanceText.TextColor3 = ZOMBIE_NAME_COLOR -- Grüne Distanz
+                                else
+                                    distanceText.Text = ""
+                                end
+                            end
+                        end
+                    end
+                else
+                    removeHighlight(obj)
+                    removeLabel(obj)
+                    zombieHighlights[obj.Name] = nil
+                    zombieGuis[obj.Name] = nil
+                end
+            end
+        end
+    end
+    
+    -- Spezielle Suche für Apocalypse Rising 2
+    if workspace:FindFirstChild("Zombies") then
+        for _, zombie in pairs(workspace.Zombies:GetChildren()) do
+            if zombie:IsA("Model") then
+                local primaryPart = zombie.PrimaryPart or zombie:FindFirstChildWhichIsA("BasePart")
+                if primaryPart then
+                    local distance = (myRoot.Position - primaryPart.Position).Magnitude
+                    
+                    if distance <= MAX_ZOMBIE_DISTANCE then
+                        -- Update or create highlight
+                        local highlight = zombie:FindFirstChild("ZombieHighlight")
+                        if not highlight then
+                            highlight = addZombieHighlight(zombie)
+                            zombieHighlights[zombie.Name] = highlight
+                        end
+                        
+                        -- Update or create label
+                        local label = (primaryPart:FindFirstChild("ZombieLabel") or zombie:FindFirstChild("ZombieLabel"))
+                        if not label then
+                            label = createZombieLabel(zombie)
+                            zombieGuis[zombie.Name] = label
+                        end
+                    else
+                        removeHighlight(zombie)
+                        removeLabel(zombie)
+                        zombieHighlights[zombie.Name] = nil
+                        zombieGuis[zombie.Name] = nil
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Map ESP Function
+local function toggleMapESP(state)
+    mapEspEnabled = state
+    
+    if state then
+        print("Map ESP aktiviert")
+        -- Hier würde normalerweise die Map-Sichtbarkeit erhöht werden
+        -- In Apocalypse Rising 2 könnte man hier die Map-Objekte transparent machen
+    else
+        print("Map ESP deaktiviert")
+    end
+end
+
+local function setupPlayer(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            task.wait(1)
+            updatePlayerVisuals()
+        end)
+    end
+end
+
+-- Cleanup functions
+local function cleanupPlayerVisuals()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            removeHighlight(player.Character)
+            removeLabel(player.Character)
+        end
+    end
+    playerHighlights = {}
+    playerGuis = {}
+end
+
+local function cleanupVehicleVisuals()
+    if workspace:FindFirstChild("Vehicles") then
+        for _, vehicle in pairs(workspace.Vehicles:GetChildren()) do
+            removeHighlight(vehicle)
+            removeLabel(vehicle)
+        end
+    end
+    vehicleHighlights = {}
+    vehicleGuis = {}
+end
+
+local function cleanupZombieVisuals()
+    for _, zombie in pairs(workspace:GetChildren()) do
+        if zombie:IsA("Model") and (zombie.Name:lower():find("zombie") or zombie.Name:lower():find("infected")) then
+            removeHighlight(zombie)
+            removeLabel(zombie)
+        end
+    end
+    zombieHighlights = {}
+    zombieGuis = {}
+end
+
+-- Toggle Player ESP
+local function togglePlayerESP(state)
+    playerEspEnabled = state
+    
+    if state then
+        updatePlayerVisuals()
+    else
+        cleanupPlayerVisuals()
+    end
+end
+
+-- Toggle Vehicle ESP
+local function toggleVehicleESP(state)
+    vehicleEspEnabled = state
+    
+    if state then
+        if not vehicleEspConnection then
+            vehicleEspConnection = RunService.Heartbeat:Connect(updateVehicleESP)
+        end
+        updateVehicleESP()
+    else
+        if vehicleEspConnection then
+            vehicleEspConnection:Disconnect()
+            vehicleEspConnection = nil
+        end
+        
+        cleanupVehicleVisuals()
+    end
+end
+
+-- Toggle Zombie ESP
+local function toggleZombieESP(state)
+    zombieEspEnabled = state
+    
+    if state then
+        if not zombieEspConnection then
+            zombieEspConnection = RunService.Heartbeat:Connect(updateZombieESP)
+        end
+        updateZombieESP()
+    else
+        if zombieEspConnection then
+            zombieEspConnection:Disconnect()
+            zombieEspConnection = nil
+        end
+        
+        cleanupZombieVisuals()
+    end
+end
+
+-- Initialize for existing players
+for _, player in pairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+
+Players.PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer and XRAY_ACTIVE then
+        toggleXRay()
+    end
+    if playerHighlights[player] then
+        removeHighlight(playerHighlights[player].Parent)
+        playerHighlights[player] = nil
+    end
+    if playerGuis[player] then
+        removeLabel(playerGuis[player].Parent)
+        playerGuis[player] = nil
+    end
+end)
+
+-- AIM ASSIST UI --
+AimTab:CreateSection("Aim Assist Settings")
+
+local AimToggle = AimTab:CreateToggle({
+    Name = "Enable Aim Assist",
+    CurrentValue = false,
+    Flag = "AimToggle",
+    Callback = function(Value)
+        aimEnabled = Value
+        if not Value then
+            aiming = false
+            currentTarget = nil
+            lockedTarget = nil
+            if aimConnection then
+                aimConnection:Disconnect()
+                aimConnection = nil
+            end
+        end
+        updateFOVCircle()
+    end
+})
+
+local AimKeybind = AimTab:CreateKeybind({
+    Name = "Aim Keybind",
+    CurrentKeybind = "MouseButton2",
+    HoldToInteract = false,
+    Flag = "AimKey",
+    Callback = function(Key)
+    end
+})
+
+local AimToggleKeybind = AimTab:CreateKeybind({
+    Name = "Aim Toggle Keybind",
+    CurrentKeybind = "F5",
+    HoldToInteract = false,
+    Flag = "AimToggleKey",
+    Callback = function(Key)
+    end
+})
+
+AimTab:CreateDivider()
+
+local AimSpeedSlider = AimTab:CreateSlider({
+    Name = "Aim Speed",
+    Range = {0.1, 1.0},
+    Increment = 0.05,
+    Suffix = "x",
+    CurrentValue = 0.3,
+    Flag = "AimSpeed",
+    Callback = function(Value)
+    end
+})
+
+local AimFOVSlider = AimTab:CreateSlider({
+    Name = "Aim FOV",
+    Range = {50, 300},
+    Increment = 10,
+    Suffix = "px",
+    CurrentValue = 100,
+    Flag = "AimFOV",
+    Callback = function(Value)
+        if ESPCircle then
+            ESPCircle.Radius = Value
+        end
+        updateFOVCircle()
+    end
+})
+
+local ShowFOVToggle = AimTab:CreateToggle({
+    Name = "Show FOV Circle",
+    CurrentValue = false,
+    Flag = "ShowFOV",
+    Callback = function(Value)
+        if ESPCircle then
+            ESPCircle.Visible = Value and aimEnabled
+        end
+    end
+})
+
+local TargetPartDropdown = AimTab:CreateDropdown({
+    Name = "Target Body Part",
+    Options = {"Head", "HumanoidRootPart", "Torso"},
+    CurrentOption = {"Head"},
+    MultipleOptions = false,
+    Flag = "TargetPart",
+    Callback = function(Options)
+    end
+})
+
+AimTab:CreateDivider()
+
+AimTab:CreateButton({
+    Name = "Reset Aim Assist",
+    Callback = function()
+        aimEnabled = false
+        aiming = false
+        currentTarget = nil
+        lockedTarget = nil
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+        AimToggle:Set(false)
+        if ESPCircle then
+            ESPCircle.Visible = false
+        end
+    end
+})
+
+-- VISUALS/ESP UI --
+VisualsTab:CreateSection("Player ESP")
+
+local PlayerESPToggle = VisualsTab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = false,
+    Flag = "PlayerESP",
+    Callback = function(Value)
+        togglePlayerESP(Value)
+    end
+})
+
+local PlayerESPKeybind = VisualsTab:CreateKeybind({
+    Name = "Player ESP Keybind",
+    CurrentKeybind = "F4",
+    HoldToInteract = false,
+    Flag = "PlayerESPKeybind",
+    Callback = function(Key)
+    end
+})
+
+local PlayerNameToggle = VisualsTab:CreateToggle({
+    Name = "Show Player Names",
+    CurrentValue = true,
+    Flag = "PlayerName",
+    Callback = function(Value)
+        SHOW_PLAYER_NAMES = Value
+        if playerEspEnabled then
+            updatePlayerVisuals()
+        end
+    end
+})
+
+local PlayerDistanceToggle = VisualsTab:CreateToggle({
+    Name = "Show Player Distance",
+    CurrentValue = true,
+    Flag = "PlayerDistance",
+    Callback = function(Value)
+        SHOW_PLAYER_DISTANCE = Value
+        if playerEspEnabled then
+            updatePlayerVisuals()
+        end
+    end
+})
+
+local PlayerFillTransparencySlider = VisualsTab:CreateSlider({
+    Name = "Player Fill Transparency",
+    Range = {0, 1},
+    Increment = 0.05,
+    CurrentValue = 0.5,
+    Flag = "PlayerFillTransparency",
+    Callback = function(Value)
+        PLAYER_FILL_TRANSPARENCY = Value
+        if playerEspEnabled then
+            updatePlayerVisuals()
+        end
+    end
+})
+
+local PlayerESPColorPicker = VisualsTab:CreateColorPicker({
+    Name = "Player ESP Color",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "PlayerESPColor",
+    Callback = function(Value)
+        PLAYER_ESP_COLOR = Value
+        if playerEspEnabled then
+            updatePlayerVisuals()
+        end
+    end
+})
+
+VisualsTab:CreateSection("Vehicle ESP")
+
+local VehicleESPToggle = VisualsTab:CreateToggle({
+    Name = "Vehicle ESP",
+    CurrentValue = false,
+    Flag = "VehicleESP",
+    Callback = function(Value)
+        toggleVehicleESP(Value)
+    end
+})
+
+local VehicleKeybind = VisualsTab:CreateKeybind({
+    Name = "Vehicle ESP Keybind",
+    CurrentKeybind = "F9",
+    HoldToInteract = false,
+    Flag = "VehicleKeybind",
+    Callback = function(Key)
+    end
+})
+
+local VehicleDistanceToggle = VisualsTab:CreateToggle({
+    Name = "Show Vehicle Distance",
+    CurrentValue = true,
+    Flag = "VehicleDistance",
+    Callback = function(Value)
+        SHOW_VEHICLE_DISTANCE = Value
+        if vehicleEspEnabled then
+            updateVehicleESP()
+        end
+    end
+})
+
+local VehicleMaxDistanceSlider = VisualsTab:CreateSlider({
+    Name = "Max Vehicle Distance",
+    Range = {50, 5000},
+    Increment = 50,
+    Suffix = " studs",
+    CurrentValue = 500,
+    Flag = "VehicleMaxDistance",
+    Callback = function(Value)
+        MAX_VEHICLE_DISTANCE = Value
+        if vehicleEspEnabled then
+            updateVehicleESP()
+        end
+    end
+})
+
+VisualsTab:CreateSection("Zombie ESP")
+
+local ZombieESPToggle = VisualsTab:CreateToggle({
+    Name = "Zombie ESP",
+    CurrentValue = false,
+    Flag = "ZombieESP",
+    Callback = function(Value)
+        toggleZombieESP(Value)
+    end
+})
+
+local ZombieKeybind = VisualsTab:CreateKeybind({
+    Name = "Zombie ESP Keybind",
+    CurrentKeybind = "F10",
+    HoldToInteract = false,
+    Flag = "ZombieKeybind",
+    Callback = function(Key)
+    end
+})
+
+local ZombieDistanceToggle = VisualsTab:CreateToggle({
+    Name = "Show Zombie Distance",
+    CurrentValue = true,
+    Flag = "ZombieDistance",
+    Callback = function(Value)
+        SHOW_ZOMBIE_DISTANCE = Value
+        if zombieEspEnabled then
+            updateZombieESP()
+        end
+    end
+})
+
+local ZombieMaxDistanceSlider = VisualsTab:CreateSlider({
+    Name = "Max Zombie Distance",
+    Range = {50, 5000},
+    Increment = 50,
+    Suffix = " studs",
+    CurrentValue = 500,
+    Flag = "ZombieMaxDistance",
+    Callback = function(Value)
+        MAX_ZOMBIE_DISTANCE = Value
+        if zombieEspEnabled then
+            updateZombieESP()
+        end
+    end
+})
+
+VisualsTab:CreateSection("Camera (Not Working rn)")
+
+local CameraFOVSlider = VisualsTab:CreateSlider({
+    Name = "Camera FOV",
+    Range = {70, 120},
+    Increment = 1,
+    Suffix = "°",
+    CurrentValue = 70,
+    Flag = "CameraFOV",
+    Callback = function(Value)
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = Value
+        end
+    end
+})
+
+VisualsTab:CreateSection("Map ESP")
+
+local MapESPToggle = VisualsTab:CreateToggle({
+    Name = "Map ESP",
+    CurrentValue = false,
+    Flag = "MapESP",
+    Callback = function(Value)
+        toggleMapESP(Value)
+    end
+})
+
+VisualsTab:CreateSection("No Camera Flinch")
+
+local NoCameraFlinchToggle = VisualsTab:CreateToggle({
+    Name = "No Camera Flinch",
+    CurrentValue = false,
+    Flag = "NoCameraFlinch",
+    Callback = function(Value)
+        toggleNoCameraFlinch(Value)
+    end
+})
+
+VisualsTab:CreateSection("X-Ray")
+
+local XRayKeybind = VisualsTab:CreateKeybind({
+    Name = "X-Ray Toggle Keybind",
+    CurrentKeybind = "F8",
+    HoldToInteract = false,
+    Flag = "XRayKeybind",
+    Callback = function(Key)
+    end
+})
+
+local XRayTransparencySlider = VisualsTab:CreateSlider({
+    Name = "X-Ray Transparency",
+    Range = {0.1, 1.0},
+    Increment = 0.05,
+    CurrentValue = 0.8,
+    Flag = "XRayTransparency",
+    Callback = function(Value)
+        TARGET_TRANSPARENCY = Value
+        if XRAY_ACTIVE then
+            for part, _ in pairs(affectedParts) do
+                if part and part.Parent then
+                    part.Transparency = Value
+                end
+            end
+        end
+    end
+})
+
+VisualsTab:CreateDivider()
+
+VisualsTab:CreateButton({
+    Name = "Reset Visuals",
+    Callback = function()
+        togglePlayerESP(false)
+        toggleVehicleESP(false)
+        toggleZombieESP(false)
+        toggleMapESP(false)
+        PlayerESPToggle:Set(false)
+        VehicleESPToggle:Set(false)
+        ZombieESPToggle:Set(false)
+        MapESPToggle:Set(false)
+        
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = 70
+        end
+    end
+})
+
+-- PLAYER TAB --
+PlayerTab:CreateSection("Head Expander Settings (Not Working rn)")
+
+local HeadToggle = PlayerTab:CreateToggle({
+    Name = "Enable Head Expander",
+    CurrentValue = false,
+    Flag = "HeadToggle",
+    Callback = function(Value)
+        toggleHeadExpander(Value)
+    end
+})
+
+local HeadKeybind = PlayerTab:CreateKeybind({
+    Name = "Head Expander Keybind",
+    CurrentKeybind = "H",
+    HoldToInteract = false,
+    Flag = "HeadKeybind",
+    Callback = function(Key)
+    end
+})
+
+PlayerTab:CreateDivider()
+
+local HeadSizeSlider = PlayerTab:CreateSlider({
+    Name = "Head Size",
+    Range = {2, 20},
+    Increment = 0.5,
+    Suffix = " studs",
+    CurrentValue = 5,
+    Flag = "HeadSize",
+    Callback = function(Value)
+        if headExpanderEnabled then
+            updateAllHeads()
+        end
+    end
+})
+
+PlayerTab:CreateDivider()
+
+-- NO FALL DAMAGE SECTION --
+PlayerTab:CreateSection("No Fall Damage")
+
+local NoFallDamageToggle = PlayerTab:CreateToggle({
+    Name = "No Fall Damage",
+    CurrentValue = false,
+    Flag = "NoFallDamage",
+    Callback = function(Value)
+        toggleNoFallDamage(Value)
+    end
+})
+
+PlayerTab:CreateDivider()
+
+-- JUMP SETTINGS SECTION --
+PlayerTab:CreateSection("Jump Settings")
+
+local JumpHeightSlider = PlayerTab:CreateSlider({
+    Name = "Jump Height",
+    Range = {5, 100},
+    Increment = 1,
+    Suffix = " studs",
+    CurrentValue = 50,
+    Flag = "JumpHeight",
+    Callback = function(Value)
+        jumpHeight = Value
+        toggleJumpHeight(true)
+    end
+})
+
+local NoJumpDebounceToggle = PlayerTab:CreateToggle({
+    Name = "No Jump Debounce",
+    CurrentValue = false,
+    Flag = "NoJumpDebounce",
+    Callback = function(Value)
+        toggleNoJumpDebounce(Value)
+    end
+})
+
+PlayerTab:CreateDivider()
+
+-- INFINITE JUMP SECTION --
+PlayerTab:CreateSection("Infinite Jump (Not Working rn)")
+
+local InfiniteJumpToggle = PlayerTab:CreateToggle({
+    Name = "Enable Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfiniteJumpToggle",
+    Callback = function(Value)
+        toggleInfiniteJump(Value)
+    end
+})
+
+local InfiniteJumpKeybind = PlayerTab:CreateKeybind({
+    Name = "Infinite Jump Keybind",
+    CurrentKeybind = "V",
+    HoldToInteract = false,
+    Flag = "InfiniteJumpKeybind",
+    Callback = function(Key)
+    end
+})
+
+PlayerTab:CreateDivider()
+
+-- WALK SPEED SECTION --
+PlayerTab:CreateSection("Walk Speed")
+
+local WalkSpeedToggle = PlayerTab:CreateToggle({
+    Name = "Enable Walk Speed",
+    CurrentValue = false,
+    Flag = "WalkSpeedToggle",
+    Callback = function(Value)
+        toggleWalkSpeed(Value)
+    end
+})
+
+local NormalWalkSpeedSlider = PlayerTab:CreateSlider({
+    Name = "Normal Walk Speed Recommend 22",
+    Range = {16, 35},
+    Increment = 1,
+    Suffix = " studs/sec",
+    CurrentValue = 16,
+    Flag = "NormalWalkSpeed",
+    Callback = function(Value)
+        normalWalkSpeed = Value
+        if not isSprinting and walkSpeedEnabled then
+            currentWalkSpeed = Value
+        end
+    end
+})
+
+local SprintWalkSpeedSlider = PlayerTab:CreateSlider({
+    Name = "Sprint Walk Speed Recommend 28",
+    Range = {25, 35},
+    Increment = 1,
+    Suffix = " studs/sec",
+    CurrentValue = 35,
+    Flag = "SprintWalkSpeed",
+    Callback = function(Value)
+        sprintWalkSpeed = Value
+        if isSprinting and walkSpeedEnabled then
+            currentWalkSpeed = Value
+        end
+    end
+})
+
+PlayerTab:CreateDivider()
+
+-- RESET BUTTONS --
+PlayerTab:CreateSection("Reset")
+
+PlayerTab:CreateButton({
+    Name = "Reset Head Expander",
+    Callback = function()
+        toggleHeadExpander(false)
+        HeadToggle:Set(false)
+    end
+})
+
+PlayerTab:CreateButton({
+    Name = "Reset No Fall Damage",
+    Callback = function()
+        toggleNoFallDamage(false)
+        NoFallDamageToggle:Set(false)
+    end
+})
+
+PlayerTab:CreateButton({
+    Name = "Reset Jump Settings",
+    Callback = function()
+        toggleJumpHeight(false)
+        JumpHeightSlider:Set(50)
+        NoJumpDebounceToggle:Set(false)
+        toggleNoJumpDebounce(false)
+    end
+})
+
+PlayerTab:CreateButton({
+    Name = "Reset Infinite Jump",
+    Callback = function()
+        toggleInfiniteJump(false)
+        InfiniteJumpToggle:Set(false)
+    end
+})
+
+PlayerTab:CreateButton({
+    Name = "Reset Walk Speed",
+    Callback = function()
+        toggleWalkSpeed(false)
+        WalkSpeedToggle:Set(false)
+        NormalWalkSpeedSlider:Set(16)
+        SprintWalkSpeedSlider:Set(35)
+    end
+})
+
+-- SETTINGS TAB --
+SettingsTab:CreateSection("UI Settings")
+
+local UIKeybind = SettingsTab:CreateKeybind({
+    Name = "Toggle UI",
+    CurrentKeybind = "RightControl",
+    HoldToInteract = false,
+    Flag = "UIKeybind",
+    Callback = function(Key)
+    end
+})
+
+local ThemeDropdown = SettingsTab:CreateDropdown({
+    Name = "UI Theme",
+    Options = {"Default", "AmberGlow", "Amethyst", "Bloom", "DarkBlue", "Green", "Light", "Ocean", "Serenity"},
+    CurrentOption = {"Default"},
+    MultipleOptions = false,
+    Flag = "UITheme",
+    Callback = function(Options)
+        Window.ModifyTheme(Options[1])
+    end
+})
+
+SettingsTab:CreateDivider()
+SettingsTab:CreateSection("Configuration")
+
+SettingsTab:CreateButton({
+    Name = "Save All Settings",
+    Callback = function()
+        Rayfield:LoadConfiguration()
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "Load All Settings",
+    Callback = function()
+        Rayfield:LoadConfiguration()
+    end
+})
+
+SettingsTab:CreateDivider()
+
+SettingsTab:CreateButton({
+    Name = "Disable All Cheats",
+    Callback = function()
+        aimEnabled = false
+        aiming = false
+        currentTarget = nil
+        lockedTarget = nil
+        headExpanderEnabled = false
+        playerEspEnabled = false
+        vehicleEspEnabled = false
+        zombieEspEnabled = false
+        mapEspEnabled = false
+        noFallDamageEnabled = false
+        noCameraFlinchEnabled = false
+        infiniteJumpEnabled = false
+        walkSpeedEnabled = false
+        isSprinting = false
+        
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+        
+        if headExpanderConnection then
+            headExpanderConnection:Disconnect()
+            headExpanderConnection = nil
+        end
+        
+        if infiniteJumpConnection then
+            infiniteJumpConnection:Disconnect()
+            infiniteJumpConnection = nil
+        end
+        
+        if walkSpeedConnection then
+            walkSpeedConnection:Disconnect()
+            walkSpeedConnection = nil
+        end
+        
+        if vehicleEspConnection then
+            vehicleEspConnection:Disconnect()
+            vehicleEspConnection = nil
+        end
+        
+        if zombieEspConnection then
+            zombieEspConnection:Disconnect()
+            zombieEspConnection = nil
+        end
+        
+        AimToggle:Set(false)
+        HeadToggle:Set(false)
+        PlayerESPToggle:Set(false)
+        VehicleESPToggle:Set(false)
+        ZombieESPToggle:Set(false)
+        MapESPToggle:Set(false)
+        NoFallDamageToggle:Set(false)
+        NoCameraFlinchToggle:Set(false)
+        InfiniteJumpToggle:Set(false)
+        WalkSpeedToggle:Set(false)
+        
+        cleanupPlayerVisuals()
+        cleanupVehicleVisuals()
+        cleanupZombieVisuals()
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                restoreHead(player.Character)
+            end
+        end
+        
+        originalHeadSizes = {}
+        originalHeadCollisions = {}
+        
+        if ESPCircle then
+            ESPCircle.Visible = false
+        end
+        
+        if XRAY_ACTIVE then
+            toggleXRay()
+        end
+        
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = 70
+        end
+        
+        -- Reset walk speed to default
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+                humanoid.JumpHeight = 4.8
+                humanoid.JumpPower = 50
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            end
+        end
+        
+        print("All cheats disabled")
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "Close UI",
+    Callback = function()
+        Rayfield:Destroy()
+    end
+})
+
+-- INPUT HANDLER --
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- UI Toggle
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        Rayfield:SetVisibility(not Rayfield:IsVisible())
+    end
+    
+    -- Aim Assist Toggle
+    if input.KeyCode == Enum.KeyCode.F5 then
+        aimEnabled = not aimEnabled
+        AimToggle:Set(aimEnabled)
+        updateFOVCircle()
+    end
+    
+    -- Player ESP Toggle
+    if input.KeyCode == Enum.KeyCode.F4 then
+        local newState = not playerEspEnabled
+        togglePlayerESP(newState)
+        PlayerESPToggle:Set(newState)
+    end
+    
+    -- Head Expander Toggle
+    if input.KeyCode == Enum.KeyCode.H then
+        local newState = not headExpanderEnabled
+        toggleHeadExpander(newState)
+        HeadToggle:Set(newState)
+    end
+    
+    -- Infinite Jump Toggle
+    if input.KeyCode == Enum.KeyCode.V then
+        local newState = not infiniteJumpEnabled
+        toggleInfiniteJump(newState)
+        InfiniteJumpToggle:Set(newState)
+    end
+    
+    -- Walk Speed Toggle
+    if input.KeyCode == Enum.KeyCode.B then
+        local newState = not walkSpeedEnabled
+        toggleWalkSpeed(newState)
+        WalkSpeedToggle:Set(newState)
+    end
+    
+    -- Pause Visuals
+    if input.KeyCode == Enum.KeyCode.F3 then
+        PAUSED = not PAUSED
+        if PAUSED then
+            cleanupPlayerVisuals()
+            cleanupVehicleVisuals()
+            cleanupZombieVisuals()
+        else
+            if playerEspEnabled then
+                updatePlayerVisuals()
+            end
+            if vehicleEspEnabled then
+                updateVehicleESP()
+            end
+            if zombieEspEnabled then
+                updateZombieESP()
+            end
+        end
+        print("Visuals Pause: " .. (PAUSED and "ON" or "OFF"))
+    end
+    
+    -- Disable All Cheats
+    if input.KeyCode == Enum.KeyCode.F6 then
+        aimEnabled = false
+        aiming = false
+        currentTarget = nil
+        lockedTarget = nil
+        headExpanderEnabled = false
+        playerEspEnabled = false
+        vehicleEspEnabled = false
+        zombieEspEnabled = false
+        mapEspEnabled = false
+        noFallDamageEnabled = false
+        noCameraFlinchEnabled = false
+        infiniteJumpEnabled = false
+        walkSpeedEnabled = false
+        isSprinting = false
+        PAUSED = false
+        
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+        
+        if headExpanderConnection then
+            headExpanderConnection:Disconnect()
+            headExpanderConnection = nil
+        end
+        
+        if infiniteJumpConnection then
+            infiniteJumpConnection:Disconnect()
+            infiniteJumpConnection = nil
+        end
+        
+        if walkSpeedConnection then
+            walkSpeedConnection:Disconnect()
+            walkSpeedConnection = nil
+        end
+        
+        if vehicleEspConnection then
+            vehicleEspConnection:Disconnect()
+            vehicleEspConnection = nil
+        end
+        
+        if zombieEspConnection then
+            zombieEspConnection:Disconnect()
+            zombieEspConnection = nil
+        end
+        
+        AimToggle:Set(false)
+        HeadToggle:Set(false)
+        PlayerESPToggle:Set(false)
+        VehicleESPToggle:Set(false)
+        ZombieESPToggle:Set(false)
+        MapESPToggle:Set(false)
+        NoFallDamageToggle:Set(false)
+        NoCameraFlinchToggle:Set(false)
+        InfiniteJumpToggle:Set(false)
+        WalkSpeedToggle:Set(false)
+        
+        cleanupPlayerVisuals()
+        cleanupVehicleVisuals()
+        cleanupZombieVisuals()
+        
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                restoreHead(player.Character)
+            end
+        end
+        
+        originalHeadSizes = {}
+        originalHeadCollisions = {}
+        
+        if ESPCircle then
+            ESPCircle.Visible = false
+        end
+        
+        if XRAY_ACTIVE then
+            toggleXRay()
+        end
+        
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = 70
+        end
+        
+        -- Reset walk speed to default
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+                humanoid.JumpHeight = 4.8
+                humanoid.JumpPower = 50
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            end
+        end
+        
+        print("All cheats disabled (F6)")
+    end
+    
+    -- X-Ray Toggle
+    if input.KeyCode == Enum.KeyCode.F8 then
+        toggleXRay()
+    end
+    
+    -- Vehicle ESP Toggle
+    if input.KeyCode == Enum.KeyCode.F9 then
+        local newState = not vehicleEspEnabled
+        toggleVehicleESP(newState)
+        VehicleESPToggle:Set(newState)
+    end
+    
+    -- Zombie ESP Toggle
+    if input.KeyCode == Enum.KeyCode.F10 then
+        local newState = not zombieEspEnabled
+        toggleZombieESP(newState)
+        ZombieESPToggle:Set(newState)
+    end
+    
+    -- Aim Assist activation
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = true
+        if not lockedTarget then
+            local targetPlayer, targetHead = findNearestPlayer()
+            if targetHead then
+                lockedTarget = targetHead
+                currentTarget = targetHead
+            end
+        end
+        
+        if not aimConnection then
+            aimConnection = RunService.RenderStepped:Connect(permanentAim)
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = false
+        lockedTarget = nil
+        currentTarget = nil
+        
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+    end
+end)
+
+-- Create FOV Circle
+createFOVCircle()
+
+-- Player ESP Update Loop
+local playerEspUpdateConnection
+playerEspUpdateConnection = RunService.Heartbeat:Connect(function()
+    if PAUSED then return end
+    
+    if playerEspEnabled then
+        updatePlayerVisuals()
+    end
+    
+    updateFOVCircle()
+    
+    -- Apply jump height if enabled
+    if jumpHeight > 4.8 and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.JumpHeight = jumpHeight
+        end
+    end
+end)
+
+-- Load Rayfield Configuration
+Rayfield:LoadConfiguration()
+

