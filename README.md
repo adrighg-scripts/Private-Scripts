@@ -127,6 +127,13 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/B
 loadstring(Game:HttpGet("https://raw.githubusercontent.com/yolobradda/eclipsefisch/refs/heads/main/eclipsefisch"))()
 ```
 
+## Fling Things and People
+
+
+```bash
+loadstring(game:HttpGet("https://rawscripts.net/raw/Fling-Things-and-People-FTAP-VHS-15769"))()
+```
+
 ## Game Id Teller
 
 
