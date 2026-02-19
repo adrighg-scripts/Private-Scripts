@@ -1,0 +1,172 @@
+-- Optimiertes Aim Assist Script
+local mouse = LocalPlayer:GetMouse()
+
+local aimEnabled = false
+local aiming = false
+local aimConnection = nil
+local currentTarget = nil
+local lockedTarget = nil -- 🔒 Neuer: Gesperrter Target
+local lastAimUpdate = 0
+local AIM_UPDATE_INTERVAL = 0.03 -- Schneller für besseres Aiming
+
+-- Funktion zum Finden des nächsten Spielers innerhalb des Kreises
+function findNearestPlayer()
+    local closestPlayer = nil
+    local closestDistance = 100
+    local closestHead = nil
+    
+    local camera = workspace.CurrentCamera
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+            local humanoid = otherPlayer.Character:FindFirstChild("Humanoid")
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            
+            if humanoid and humanoid.Health > 0 and head then
+                local screenPoint, visible = camera:WorldToScreenPoint(head.Position)
+                
+                if visible then
+                    local playerScreenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+                    local distance = (playerScreenPos - screenCenter).Magnitude
+                    
+                    if distance <= closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                        closestHead = head
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer, closestHead
+end
+
+-- Optimierte Aim-Funktion
+function permanentAim()
+    if not aiming then return end
+    
+    -- 🔒 Wenn wir einen gesperrten Target haben, verwende diesen
+    if lockedTarget and lockedTarget.Parent then
+        local humanoid = lockedTarget.Parent:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            currentTarget = lockedTarget
+        else
+            -- Target ist tot oder ungültig
+            lockedTarget = nil
+            currentTarget = nil
+            return
+        end
+    elseif not currentTarget then
+        -- 🔒 Kein gesperrter Target, suche neuen
+        local targetPlayer, targetHead = findNearestPlayer()
+        if targetPlayer and targetHead then
+            currentTarget = targetHead
+            lockedTarget = targetHead -- 🔒 Sofort sperren
+        else
+            return
+        end
+    end
+    
+    -- Überprüfe ob Target noch gültig ist
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local targetPlayer = Players:GetPlayerFromCharacter(currentTarget.Parent)
+    if not targetPlayer then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    local humanoid = currentTarget.Parent:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        currentTarget = nil
+        lockedTarget = nil
+        return
+    end
+    
+    -- Permanentes Zielen auf den Kopf des gesperrten Targets
+    local screenPoint = workspace.CurrentCamera:WorldToScreenPoint(currentTarget.Position)
+    local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
+    
+    local currentMousePos = Vector2.new(mouse.X, mouse.Y)
+    local direction = (targetPos - currentMousePos)
+    
+    -- Optimierte Geschwindigkeit
+    local speed = 0.3
+    local step = direction * speed
+    
+    pcall(function()
+        mousemoverel(step.X, step.Y)
+    end)
+end
+
+-- Input Handler für Aim Assist
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.F5 then
+        aimEnabled = not aimEnabled
+        if aimEnabled then
+            print("Aim Assist aktiviert - Permanente Fixierung")
+        else
+            print("Aim Assist deaktiviert")
+            aiming = false
+            currentTarget = nil
+            lockedTarget = nil -- 🔒 Reset gesperrten Target
+            if aimConnection then
+                aimConnection:Disconnect()
+                aimConnection = nil
+            end
+        end
+    end
+    
+    if input.KeyCode == Enum.KeyCode.F6 then
+        aimEnabled = false
+        aiming = false
+        currentTarget = nil
+        lockedTarget = nil -- 🔒 Reset gesperrten Target
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+        print("Aim Assist komplett geschlossen")
+    end
+    
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = true
+        -- 🔒 Beim Drücken wird der aktuelle Target gesperrt
+        if not lockedTarget then
+            local targetPlayer, targetHead = findNearestPlayer()
+            if targetHead then
+                lockedTarget = targetHead
+                currentTarget = targetHead
+            end
+        end
+        
+        if not aimConnection then
+            aimConnection = RunService.RenderStepped:Connect(permanentAim)
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if aimEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        aiming = false
+        -- 🔒 Erst beim Loslassen wird der Target wieder freigegeben
+        lockedTarget = nil
+        currentTarget = nil
+        
+        if aimConnection then
+            aimConnection:Disconnect()
+            aimConnection = nil
+        end
+    end
+end)
