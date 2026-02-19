@@ -211,15 +211,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllSc
 
 
 ```bash
-loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot?token=GHSAT0AAAAAADVTNJYWEIDC2VG3BDNVHRMK2MWNGLA"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot"))()
 ```
 
-## Steal a Brainrot Leute nerven
+## Steal a Brainrot Auto fuck off
 
 
 
 ```bash
-loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot%20Leute%20nerven?token=GHSAT0AAAAAADVTNJYWRJIGMHUYGRIL7BQQ2MWNGTQ"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/AllScripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off"))()
 ```
 
 ## Teleport Manager
