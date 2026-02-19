@@ -23,7 +23,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202"))()
 ```
 
-## Aimbot und Esp Apocalypse Rising 2
+## Aimbot and Esp Apocalypse Rising 2
 
 
 
@@ -39,7 +39,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-afk/main/antiafkbyhassanxzyn"))()
 ```
 
-## Apocalypse Rising 2 (Meins)
+## Apocalypse Rising 2 (My)
 
 
 
@@ -47,7 +47,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-
 loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Apocalypse%20Rising%202%20(Meins)"))()
 ```
 
-## Auto Execute Vorlage
+## Auto Execute Template
 
 
 
