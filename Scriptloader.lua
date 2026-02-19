@@ -187,7 +187,7 @@ mainFrame.Size = guiSize
 mainFrame.Position = UDim2.new(0.5, -190, 0.5, -225)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 mainFrame.BorderSizePixel = 0
-mainFrame.ClipsDescendants = true
+mainFrame.ClipsDescendants = true -- WICHTIG: Verhindert dass Inhalte über den Rand ragen
 mainFrame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
@@ -224,14 +224,15 @@ buttonsFrame.Position = UDim2.new(1, -60, 0, 0)
 buttonsFrame.BackgroundTransparency = 1
 buttonsFrame.Parent = titleBar
 
+-- Minimize Button (mit korrektem Minus-Zeichen)
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Name = "MinimizeButton"
 minimizeButton.Size = UDim2.new(0, 24, 0, 24)
 minimizeButton.Position = UDim2.new(0, 0, 0.5, -12)
 minimizeButton.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
-minimizeButton.Text = "−"
+minimizeButton.Text = "−"  -- Korrektes Minus-Zeichen
 minimizeButton.TextColor3 = Color3.fromRGB(220, 220, 255)
-minimizeButton.TextSize = 18
+minimizeButton.TextSize = 20
 minimizeButton.Font = Enum.Font.GothamBold
 minimizeButton.Parent = buttonsFrame
 
@@ -239,14 +240,15 @@ local minCorner = Instance.new("UICorner")
 minCorner.CornerRadius = UDim.new(0, 4)
 minCorner.Parent = minimizeButton
 
+-- Close Button (mit korrektem X)
 local closeButton = Instance.new("TextButton")
 closeButton.Name = "CloseButton"
 closeButton.Size = UDim2.new(0, 24, 0, 24)
 closeButton.Position = UDim2.new(1, -24, 0.5, -12)
 closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeButton.Text = "✕"
+closeButton.Text = "✕"  -- Korrektes X-Symbol
 closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.TextSize = 14
+closeButton.TextSize = 16  -- Größe angepasst
 closeButton.Font = Enum.Font.GothamBold
 closeButton.Parent = buttonsFrame
 
@@ -254,6 +256,7 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 4)
 closeCorner.Parent = closeButton
 
+-- Content Frame (wird beim Minimieren ausgeblendet)
 local contentFrame = Instance.new("Frame")
 contentFrame.Name = "ContentFrame"
 contentFrame.Size = UDim2.new(1, 0, 1, -35)
@@ -636,15 +639,25 @@ local function animateOpenClose(targetOpen)
     local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
     if targetOpen then
+        -- Beim Öffnen: ContentFrame wieder anzeigen
         local goal = { Size = guiSize }
         local tween = TweenService:Create(mainFrame, tweenInfo, goal)
         tween:Play()
+        
+        -- ContentFrame einblenden
+        contentFrame.Visible = true
         isOpen = true
+        minimizeButton.Text = "−"
     else
+        -- Beim Schließen: ContentFrame ausblenden
         local goal = { Size = minimizedSize }
         local tween = TweenService:Create(mainFrame, tweenInfo, goal)
         tween:Play()
+        
+        -- ContentFrame ausblenden
+        contentFrame.Visible = false
         isOpen = false
+        minimizeButton.Text = "+"  -- Plus-Zeichen wenn minimiert
     end
 end
 
