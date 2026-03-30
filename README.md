@@ -79,12 +79,20 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 loadstring(game:HttpGet("https://raw.githubusercontent.com/TheRealAsu/BABFT/refs/heads/main/Loader.lua"))()
 ```
 
-## Car Crushers 2
+## Car Crushers 2 Key
 
 
 
 ```bash
 loadstring(game:HttpGet("https://soggyhubv2.vercel.app"))()
+```
+
+## Car Crushers 2 Keyless
+
+
+
+```bash
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadido/main_scripts/main/Car_Crushers_2.lua"))()
 ```
 
 ## Coordinate
