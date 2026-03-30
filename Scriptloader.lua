@@ -61,6 +61,11 @@ local SCRIPTS = {
     {
         name = "Car Crushers 2",
         url = "https://soggyhubv2.vercel.app",
+        description = "Key Car Crushers 2 Script"
+    },
+        {
+        name = "Car Crushers 2",
+        url = "https://whimper.xyz/kitty",
         description = "Basic Car Crushers 2 Script"
     },
     {
