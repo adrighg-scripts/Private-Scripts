@@ -64,8 +64,8 @@ local SCRIPTS = {
         description = "Key Car Crushers 2 Script"
     },
         {
-        name = "Car Crushers 2",
-        url = "https://whimper.xyz/kitty",
+        name = "Car Crushers 2 Keyless",
+        url = "https://raw.githubusercontent.com/Breadido/main_scripts/main/Car_Crushers_2.lua",
         description = "Basic Car Crushers 2 Script"
     },
     {
