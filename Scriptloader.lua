@@ -7,7 +7,7 @@ local Player = Players.LocalPlayer
 -- ============================================
 -- >>> DEIN TOKEN (WIE IM TEST) <<<
 -- ============================================
-local MEIN_TOKEN = "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"
+local MEIN_TOKEN = ""
 
 -- ============================================
 -- SCRIPT LISTE
