@@ -2,7 +2,7 @@
   <h1>🔴 Script Loader</h1> 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Scriptloader.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Scriptloader.lua"))()
 ```
 
   <h1>Copy Loadstrings:</h1>
@@ -12,7 +12,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/APOC%20ULTIMATIV.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/APOC%20ULTIMATIV.lua"))()
 ```
 
 ## Aimbot Apocalypse Rising 2
@@ -20,7 +20,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0YnFqQnEi3H0P_wAytYVzs8TAdX
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20Apocalypse%20Rising%202"))()
 ```
 
 ## Aimbot and Esp Apocalypse Rising 2
@@ -28,7 +28,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0YnFqQnEi3H0P_wAytYVzs8TAdX
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Aimbot%20und%20Esp%20Apocalypse%20Rising%202"))()
 ```
 
 ## Anti Afk
@@ -44,7 +44,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/hassanxzayn-lua/Anti-
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Apocalypse%20Rising%202%20(My)"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Apocalypse%20Rising%202%20(My)"))()
 ```
 
 ## Auto Execute Template
@@ -52,7 +52,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0YnFqQnEi3H0P_wAytYVzs8TAdX
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Auto%20Execute%20Vorlage"))()
+loadstring(game:HttpGet("https://@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Auto%20Execute%20Vorlage"))()
 ```
 
 ## Brookhaven TROLL
@@ -68,7 +68,7 @@ loadstring(game:HttpGet("https://rawscripts.net/raw/Brookhaven-RP-C00LKIDD-HUB-a
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Build%20a%20Boat%20for%20a%20Treasure"))()
 ```
 
 ## Build a Boat for a Treasure (Key)
@@ -100,14 +100,14 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadido/main_scripts
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Coordinate"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Coordinate"))()
 ```
 
 ## Delete Parts
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Delete%20Parts"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Delete%20Parts"))()
 ```
 
 ## Esp Apocalypse Rising 2
@@ -115,7 +115,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Esp%20Apocalypse%20Rising%202"))()
 ```
 
 ## Every Emote
@@ -144,7 +144,7 @@ loadstring(game:HttpGet("https://rawscripts.net/raw/Fling-Things-and-People-FTAP
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Game%20Id%20Teller"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Game%20Id%20Teller"))()
 ```
 
 ## Infinite Yield
@@ -160,7 +160,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Jerk%20Scripts"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Jerk%20Scripts"))()
 ```
 
 ## Knockout
@@ -168,7 +168,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Knockout"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Knockout"))()
 ```
 
 ## Limb Extender
@@ -216,7 +216,7 @@ loadstring(game:HttpGet("https://pastebin.com/raw/Wf9z70eE"))()
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Slap%20Battles"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Slap%20Battles"))()
 ```
 
 ## Steal a Brainrot
@@ -224,7 +224,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot"))()
 ```
 
 ## Steal a Brainrot Auto fuck off
@@ -232,7 +232,7 @@ loadstring(game:HttpGet("https://github_pat_11B4DK7FY0RwUZJnT9xgCp_J2UmHQTDaI0P4
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Steal%20a%20Brainrot%20Auto%20fuck%20off"))()
 ```
 
 ## Teleport Manager
@@ -248,7 +248,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Priva
 
 
 ```bash
-loadstring(game:HttpGet("https://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@raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Uncopylocker%20Script"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Uncopylocker%20Script"))()
 ```
 
 ## Universal Script
