@@ -179,6 +179,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Priva
 loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua'))()
 ```
 
+## Limb Extender
+
+
+
+```bash
+loadstring(game:HttpGet('https://raw.githubusercontent.com/adrighg-scripts/Private-Scripts/refs/heads/main/Murder%20Duels'))()
+```
+
+
 ## Obby Creator
 
 
