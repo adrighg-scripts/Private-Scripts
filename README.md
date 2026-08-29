@@ -179,7 +179,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/adrighg-scripts/Priva
 loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/UI_LimbExtender.lua'))()
 ```
 
-## Limb Extender
+## Murder Duels
 
 
 
