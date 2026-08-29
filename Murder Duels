@@ -1,0 +1,1190 @@
+----------------------------------------------------------------------
+-- 🔒 Anti-Duplicate & Flag (Old Script Termination)
+----------------------------------------------------------------------
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+local mouse = LocalPlayer:GetMouse()
+
+if LocalPlayer:FindFirstChild("HighlightScriptRunning") then
+    local oldFlag = LocalPlayer:FindFirstChild("HighlightScriptRunning")
+    if oldFlag:IsA("BindableEvent") then
+        oldFlag:Fire()
+    end
+end
+
+local terminateEvent = Instance.new("BindableEvent")
+terminateEvent.Name = "HighlightScriptRunning"
+terminateEvent.Parent = LocalPlayer
+
+local ACTIVE = true
+terminateEvent.Event:Connect(function()
+    ACTIVE = false
+end)
+
+----------------------------------------------------------------------
+-- 💾 Configuration Saving & Loading System
+----------------------------------------------------------------------
+local CONFIG_FILE = "ESPCombatHub_Config.json"
+
+local function loadConfig()
+    if readfile and isfile and isfile(CONFIG_FILE) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(CONFIG_FILE))
+        end)
+        if success and type(data) == "table" then
+            return data
+        end
+    end
+    return {}
+end
+
+local savedConfig = loadConfig()
+
+----------------------------------------------------------------------
+-- ✨ Settings & Keybinds Configuration (with persistence)
+----------------------------------------------------------------------
+local SHOW_METERS = savedConfig.ShowMeters ~= nil and savedConfig.ShowMeters or true
+local SHOW_NAMES = savedConfig.ShowNames ~= nil and savedConfig.ShowNames or false
+local SHOW_SPEED = savedConfig.ShowSpeed ~= nil and savedConfig.ShowSpeed or true
+local HIGHLIGHT_ENABLED = savedConfig.HighlightEnabled ~= nil and savedConfig.HighlightEnabled or true
+local PAUSED = savedConfig.Paused ~= nil and savedConfig.Paused or false
+local STUD_TO_M = 0.28
+
+-- Keybind Settings (Fallback to valid Rayfield key strings instead of EnumItem objects)
+local keybindMeters = type(savedConfig.KeybindMeters) == "string" and savedConfig.KeybindMeters or "F1"
+local keybindNames = type(savedConfig.KeybindNames) == "string" and savedConfig.KeybindNames or "F2"
+local keybindHighlight = type(savedConfig.KeybindHighlight) == "string" and savedConfig.KeybindHighlight or "F3"
+local keybindPause = type(savedConfig.KeybindPause) == "string" and savedConfig.KeybindPause or "F4"
+local keybindAim = type(savedConfig.KeybindAim) == "string" and savedConfig.KeybindAim or "F5"
+local keybindBhop = type(savedConfig.KeybindBhop) == "string" and savedConfig.KeybindBhop or "F7"
+local keybindXRay = type(savedConfig.KeybindXRay) == "string" and savedConfig.KeybindXRay or "F8"
+local keybindMouseUnlock = type(savedConfig.KeybindMouseUnlock) == "string" and savedConfig.KeybindMouseUnlock or "T"
+local keybindPause  = type(savedConfig.keybindPause) == "string" and savedConfig.keybindPause or "F9"
+local keybindTerminate = type(savedConfig.KeybindTerminate) == "string" and savedConfig.KeybindTerminate or "F6"
+
+-- Highlight Customization
+local HIGHLIGHT_COLOR = savedConfig.HighlightColor and Color3.fromRGB(savedConfig.HighlightColor[1], savedConfig.HighlightColor[2], savedConfig.HighlightColor[3]) or Color3.fromRGB(255, 255, 255)
+local OUTLINE_COLOR = savedConfig.OutlineColor and Color3.fromRGB(savedConfig.OutlineColor[1], savedConfig.OutlineColor[2], savedConfig.OutlineColor[3]) or Color3.fromRGB(255, 255, 255)
+
+-- Bunny Hop Settings
+local BHOP_ENABLED = savedConfig.BhopEnabled ~= nil and savedConfig.BhopEnabled or false
+local BHOP_PERCENT_BOOST = savedConfig.BhopPercentBoost or 50
+local bhopStartTime = 0
+local bhopWasJumping = false
+
+-- Mouse Unlock Settings
+local MOUSE_UNLOCK_ENABLED = savedConfig.MouseUnlockEnabled ~= nil and savedConfig.MouseUnlockEnabled or false
+
+local UPDATE_INTERVAL = 0.1
+local lastUpdate = 0
+local cachedPlayerData = {}
+
+local XRAY_ACTIVE = false
+local TARGET_TRANSPARENCY = 0.8
+local IGNORE_THRESHOLD = 0.8
+local affectedParts = {}
+
+-- Aim Assist Settings
+local aimEnabled = savedConfig.AimEnabled ~= nil and savedConfig.AimEnabled or false
+local aimSmoothness = savedConfig.AimSmoothness or 0.5
+local aimFov = savedConfig.AimFov or 150
+local aimKey = savedConfig.AimKey or "MouseButton2"
+local aiming = false
+local aimConnection = nil
+local currentTarget = nil
+local lockedTarget = nil
+
+-- Target Filter (Teammates / Match UI Scanner)
+local targetPlayerIds = {}
+
+local saveConfig -- Forward declaration
+local terminateScript -- Forward declaration
+
+----------------------------------------------------------------------
+-- 🔍 Background Match UI Scanner (Teammate ID Extraction)
+----------------------------------------------------------------------
+local function isInMatch()
+    local success, result = pcall(function()
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if playerGui then
+            local inMatchUI = playerGui:FindFirstChild("InMatchUI")
+            if inMatchUI then
+                local round = inMatchUI:FindFirstChild("Round")
+                if round and round:IsA("GuiObject") then
+                    return round.Visible
+                end
+            end
+        end
+        return false
+    end)
+    return success and result or false
+end
+
+task.spawn(function()
+    while ACTIVE do
+        pcall(function()
+            local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+            if playerGui then
+                local inMatchUI = playerGui:FindFirstChild("InMatchUI")
+                if inMatchUI then
+                    local round = inMatchUI:FindFirstChild("Round")
+                    if round then
+                        local matchStatusFrame = round:FindFirstChild("MatchStatusFrame")
+                        if matchStatusFrame then
+                            local foreground = matchStatusFrame:FindFirstChild("Foreground")
+                            if foreground then
+                                local top = foreground:FindFirstChild("Top")
+                                if top then
+                                    local rightSide = top:FindFirstChild("RightSide")
+                                    if rightSide then
+                                        local foundIds = {}
+                                        
+                                        local function scanContainer(parentObj)
+                                            for _, child in pairs(parentObj:GetChildren()) do
+                                                if child.Name == "PlayerCard" then
+                                                    local headshot = child:FindFirstChild("Headshot")
+                                                    if headshot and headshot:IsA("ImageLabel") then
+                                                        local imageId = headshot.Image
+                                                        if imageId then
+                                                            for extractedId in imageId:gmatch("id=(%d+)") do
+                                                                local numericId = tonumber(extractedId)
+                                                                if numericId then
+                                                                    foundIds[numericId] = true
+                                                                end
+                                                            end
+                                                            for extractedId in imageId:gmatch("rblxthumb://type=AvatarHeadShot&id=(%d+)") do
+                                                                local numericId = tonumber(extractedId)
+                                                                if numericId then
+                                                                    foundIds[numericId] = true
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                                scanContainer(child)
+                                            end
+                                        end
+                                        
+                                        scanContainer(rightSide)
+                                        targetPlayerIds = foundIds
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(1)
+    end
+end)
+
+local function isTargetPlayer(player)
+    if not player then return false end
+    if not isInMatch() then return false end
+    if next(targetPlayerIds) == nil then
+        return false
+    end
+    return targetPlayerIds[player.UserId] == true
+end
+
+----------------------------------------------------------------------
+-- 🔹 Speedometer & Native Roblox Default Mouse Cursor UI
+----------------------------------------------------------------------
+local speedGui = Instance.new("ScreenGui")
+speedGui.Name = "SpeedometerGui"
+speedGui.ResetOnSpawn = false
+speedGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+speedGui.DisplayOrder = 999999
+speedGui.Parent = CoreGui
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Name = "SpeedLabel"
+speedLabel.Size = UDim2.new(0, 200, 0, 40)
+speedLabel.Position = UDim2.new(0, 15, 1, -55)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.TextStrokeTransparency = 0.3
+speedLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+speedLabel.TextSize = 18
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Text = "Speed: 0.0 studs/s"
+speedLabel.Visible = false
+speedLabel.Parent = speedGui
+
+local CUSTOM_CURSOR_OFFSET_Y = -60 
+
+local customCursor = Instance.new("Frame")
+customCursor.Name = "CustomCursor"
+customCursor.Size = UDim2.new(0, 10, 0, 10)
+customCursor.Position = UDim2.new(0, 0, 0, 0)
+customCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+customCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+customCursor.BorderSizePixel = 1
+customCursor.BorderColor3 = Color3.fromRGB(0, 0, 0)
+customCursor.Visible = false
+customCursor.ZIndex = 2147483647
+customCursor.Parent = speedGui
+
+local cursorCorner = Instance.new("UICorner")
+cursorCorner.CornerRadius = UDim.new(1, 0)
+cursorCorner.Parent = customCursor
+
+local cursorStroke = Instance.new("UIStroke")
+cursorStroke.Thickness = 1
+cursorStroke.Color = Color3.fromRGB(0, 0, 0)
+cursorStroke.Parent = customCursor
+
+----------------------------------------------------------------------
+-- 🔹 Highlight & UI Functions
+----------------------------------------------------------------------
+local function removeHighlight(character)
+    if character and character:FindFirstChild("Highlight") then
+        character.Highlight:Destroy()
+    end
+end
+
+local function addHighlight(character, player)
+    if not HIGHLIGHT_ENABLED or not isInMatch() or not isTargetPlayer(player) then
+        removeHighlight(character)
+        return
+    end
+    if character and not character:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "Highlight"
+        highlight.Adornee = character
+        highlight.FillColor = HIGHLIGHT_COLOR
+        highlight.OutlineColor = OUTLINE_COLOR
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Parent = character
+    end
+end
+
+local function updateAllHighlights()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            if HIGHLIGHT_ENABLED and isInMatch() and isTargetPlayer(player) then
+                local highlight = player.Character:FindFirstChild("Highlight")
+                if highlight then
+                    highlight.FillColor = HIGHLIGHT_COLOR
+                    highlight.OutlineColor = OUTLINE_COLOR
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                end
+            else
+                removeHighlight(player.Character)
+            end
+        end
+    end
+end
+
+local function getPlayerName(player)
+    if cachedPlayerData[player] and cachedPlayerData[player].name then
+        return cachedPlayerData[player].name
+    end
+    
+    if not cachedPlayerData[player] then
+        cachedPlayerData[player] = {}
+    end
+    
+    local playerName = player.Name
+    if player:FindFirstChild("leaderstats") then
+        local leaderstats = player.leaderstats
+        if leaderstats:FindFirstChild("Name") then
+            playerName = leaderstats.Name.Value
+        elseif leaderstats:FindFirstChild("Username") then
+            playerName = leaderstats.Username.Value
+        elseif leaderstats:FindFirstChild("PlayerName") then
+            playerName = leaderstats.PlayerName.Value
+        end
+    else
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.DisplayName ~= "" then
+                playerName = humanoid.DisplayName
+            end
+        end
+    end
+    
+    cachedPlayerData[player].name = playerName
+    return playerName
+end
+
+local function createCombinedLabel(character, player)
+    if not isInMatch() or not isTargetPlayer(player) then return end
+    if not character:FindFirstChild("Head") then return end
+    local head = character.Head
+    
+    if head:FindFirstChild("CombinedGui") then
+        head.CombinedGui:Destroy()
+    end
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "CombinedGui"
+    billboard.Size = UDim2.new(0, 200, 0, 25)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = head
+
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = billboard
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = container
+
+    local nameText = Instance.new("TextLabel")
+    nameText.Name = "NameText"
+    nameText.Size = UDim2.new(0, 0, 1, 0)
+    nameText.AutomaticSize = Enum.AutomaticSize.X
+    nameText.BackgroundTransparency = 1
+    nameText.TextColor3 = Color3.fromRGB(255, 255, 0)
+    nameText.TextStrokeTransparency = 0.3
+    nameText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameText.TextSize = 14
+    nameText.Font = Enum.Font.GothamBold
+    nameText.Text = getPlayerName(player)
+    nameText.LayoutOrder = 1
+    nameText.Parent = container
+
+    local distanceText = Instance.new("TextLabel")
+    distanceText.Name = "DistanceText"
+    distanceText.Size = UDim2.new(0, 0, 1, 0)
+    distanceText.AutomaticSize = Enum.AutomaticSize.X
+    distanceText.BackgroundTransparency = 1
+    distanceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    distanceText.TextStrokeTransparency = 0.5
+    distanceText.TextSize = 16
+    distanceText.Font = Enum.Font.GothamSemibold
+    distanceText.Text = ""
+    distanceText.LayoutOrder = 2
+    distanceText.Parent = container
+
+    return billboard
+end
+
+local function removeCombinedLabel(character)
+    if character and character:FindFirstChild("Head") then
+        local head = character.Head
+        if head:FindFirstChild("CombinedGui") then
+            head.CombinedGui:Destroy()
+        end
+    end
+end
+
+----------------------------------------------------------------------
+-- 🔦 X-RAY Functions
+----------------------------------------------------------------------
+local function toggleXRay()
+    if not isInMatch() then return end
+    if not XRAY_ACTIVE then
+        affectedParts = {}
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Transparency < IGNORE_THRESHOLD then
+                local isPlayerPart = false
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player.Character and obj:IsDescendantOf(player.Character) then
+                        isPlayerPart = true
+                        break
+                    end
+                end
+                
+                if not isPlayerPart then
+                    affectedParts[obj] = obj.Transparency
+                    obj.Transparency = TARGET_TRANSPARENCY
+                end
+            end
+        end
+        XRAY_ACTIVE = true
+    else
+        for part, transparency in pairs(affectedParts) do
+            if part and part.Parent then
+                part.Transparency = transparency
+            end
+        end
+        affectedParts = {}
+        XRAY_ACTIVE = false
+    end
+end
+
+----------------------------------------------------------------------
+-- 🎯 Aim Assist Functions
+----------------------------------------------------------------------
+local function findNearestPlayer()
+    local closestPlayer = nil
+    local closestDistance = aimFov
+    local closestHead = nil
+    
+    local camera = workspace.CurrentCamera
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= LocalPlayer and otherPlayer.Character and isTargetPlayer(otherPlayer) then
+            local humanoid = otherPlayer.Character:FindFirstChild("Humanoid")
+            local head = otherPlayer.Character:FindFirstChild("Head")
+            
+            if humanoid and humanoid.Health > 0 and head then
+                local screenPoint, visible = camera:WorldToScreenPoint(head.Position)
+                if visible then
+                    local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - screenCenter).Magnitude
+                    if distance <= closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherPlayer
+                        closestHead = head
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer, closestHead
+end
+
+local function permanentAim()
+    if not aiming or not isInMatch() then return end
+    
+    if lockedTarget and lockedTarget.Parent then
+        local humanoid = lockedTarget.Parent:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            currentTarget = lockedTarget
+        else
+            lockedTarget, currentTarget = nil, nil
+            return
+        end
+    elseif not currentTarget then
+        local _, targetHead = findNearestPlayer()
+        if targetHead then
+            currentTarget = targetHead
+            lockedTarget = targetHead
+        else
+            return
+        end
+    end
+    
+    if not currentTarget or not currentTarget.Parent then
+        currentTarget, lockedTarget = nil, nil
+        return
+    end
+    
+    local screenPoint = workspace.CurrentCamera:WorldToScreenPoint(currentTarget.Position)
+    local direction = Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(mouse.X, mouse.Y)
+    
+    pcall(function()
+        mousemoverel(direction.X * aimSmoothness, direction.Y * aimSmoothness)
+    end)
+end
+
+----------------------------------------------------------------------
+-- 🐇 Bunny Hop, Speedometer & Realtime Mouse Loop (RenderStepped)
+----------------------------------------------------------------------
+RunService.RenderStepped:Connect(function(dt)
+    if not ACTIVE then return end
+    
+    if not isInMatch() then
+        customCursor.Visible = false
+        speedLabel.Visible = false
+        return
+    end
+    
+    if MOUSE_UNLOCK_ENABLED then
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        local mouseLocation = UserInputService:GetMouseLocation()
+        customCursor.Position = UDim2.new(0, mouseLocation.X, 0, mouseLocation.Y + CUSTOM_CURSOR_OFFSET_Y)
+        
+        local viewportPoint = Vector2.new(mouseLocation.X, mouseLocation.Y + CUSTOM_CURSOR_OFFSET_Y)
+        local ray = workspace.CurrentCamera:ViewportPointToRay(viewportPoint.X, viewportPoint.Y)
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+        if LocalPlayer.Character then
+            raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, speedGui}
+        else
+            raycastParams.FilterDescendantsInstances = {speedGui}
+        end
+        raycastParams.IgnoreWater = true
+        
+        local result = workspace:Raycast(ray.Origin, ray.Direction * 500, raycastParams)
+        if result and result.Instance and result.Instance:IsA("BasePart") then
+            local color = result.Instance.Color
+            local brightness = (color.R * 0.299 + color.G * 0.587 + color.B * 0.114)
+            if brightness > 0.5 then
+                customCursor.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                cursorStroke.Color = Color3.fromRGB(255, 255, 255)
+            else
+                customCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                cursorStroke.Color = Color3.fromRGB(0, 0, 0)
+            end
+        else
+            customCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            cursorStroke.Color = Color3.fromRGB(0, 0, 0)
+        end
+        
+        customCursor.Visible = true
+    else
+        customCursor.Visible = false
+    end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid then return end
+
+    local velocity = root.AssemblyLinearVelocity
+    local horizontalVelocity = Vector3.new(velocity.X, 0, velocity.Z)
+    local currentSpeed = horizontalVelocity.Magnitude
+    
+    if SHOW_SPEED then
+        speedLabel.Text = string.format("Speed: %.1f studs/s", currentSpeed)
+        speedLabel.Visible = true
+    else
+        speedLabel.Visible = false
+    end
+
+    if BHOP_ENABLED then
+        local isSpaceDown = UserInputService:IsKeyDown(Enum.KeyCode.Space)
+        if isSpaceDown then
+            if not bhopWasJumping then
+                bhopStartTime = tick()
+                bhopWasJumping = true
+            end
+
+            if humanoid:GetState() ~= Enum.HumanoidStateType.Freefall and humanoid:GetState() ~= Enum.HumanoidStateType.Jumping then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+            
+            local x = humanoid.WalkSpeed
+            if x > 2 and horizontalVelocity.Magnitude > 0.1 then
+                local maxDuration = math.clamp(BHOP_PERCENT_BOOST / 40, 0.05, 5.0)
+                local elapsed = tick() - bhopStartTime
+                local alpha = math.clamp(elapsed / maxDuration, 0, 1)
+                
+                local currentBoostPercent = BHOP_PERCENT_BOOST * alpha
+                local z = x + (x * (currentBoostPercent / 100))
+                local newHorizontalVel = horizontalVelocity.Unit * z
+                root.AssemblyLinearVelocity = Vector3.new(newHorizontalVel.X, velocity.Y, newHorizontalVel.Z)
+            end
+        else
+            bhopWasJumping = false
+        end
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Fast Player Setup & Processing
+----------------------------------------------------------------------
+local function setupPlayer(player)
+    if player ~= LocalPlayer then
+        player.CharacterAdded:Connect(function(char)
+            task.spawn(function()
+                task.wait(0.2)
+                if not ACTIVE then return end
+                if isInMatch() and isTargetPlayer(player) then
+                    addHighlight(char, player)
+                    if SHOW_NAMES or SHOW_METERS then
+                        createCombinedLabel(char, player)
+                    end
+                end
+            end)
+        end)
+        
+        if player.Character then
+            task.spawn(function()
+                task.wait(0.2)
+                if isInMatch() and isTargetPlayer(player) then
+                    addHighlight(player.Character, player)
+                    if SHOW_NAMES or SHOW_METERS then
+                        createCombinedLabel(player.Character, player)
+                    end
+                end
+            end)
+        end
+    end
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(function(player)
+    cachedPlayerData[player] = nil
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Optimized Live Update Loop
+----------------------------------------------------------------------
+local updateConnection = RunService.Heartbeat:Connect(function(deltaTime)
+    if not ACTIVE then return end
+    
+    if not isInMatch() then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                removeHighlight(player.Character)
+                removeCombinedLabel(player.Character)
+            end
+        end
+        return
+    end
+    
+    lastUpdate = lastUpdate + deltaTime
+    if lastUpdate < UPDATE_INTERVAL then return end
+    lastUpdate = 0
+    
+    local myCharacter = LocalPlayer.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") and char:FindFirstChild("HumanoidRootPart") then
+                local head = char.Head
+                
+                if isTargetPlayer(player) then
+                    if (SHOW_NAMES or SHOW_METERS) and not PAUSED then
+                        local combinedGui = head:FindFirstChild("CombinedGui") or createCombinedLabel(char, player)
+                        if combinedGui then
+                            combinedGui.Enabled = true
+                            local container = combinedGui:FindFirstChild("Container")
+                            if container then
+                                local nameText = container:FindFirstChild("NameText")
+                                local distanceText = container:FindFirstChild("DistanceText")
+                                
+                                if nameText then nameText.Visible = SHOW_NAMES end
+                                if distanceText and SHOW_METERS then
+                                    local distMeters = (myRoot.Position - char.HumanoidRootPart.Position).Magnitude * STUD_TO_M
+                                    distanceText.Text = string.format("%.1f m", distMeters)
+                                    distanceText.Visible = true
+                                elseif distanceText then
+                                    distanceText.Visible = false
+                                end
+                            end
+                        end
+                    elseif head:FindFirstChild("CombinedGui") then
+                        head.CombinedGui.Enabled = false
+                    end
+                    
+                    if not PAUSED and HIGHLIGHT_ENABLED then
+                        addHighlight(char, player)
+                    else
+                        removeHighlight(char)
+                    end
+                else
+                    removeHighlight(char)
+                    removeCombinedLabel(char)
+                end
+            end
+        end
+    end
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Rayfield UI Setup
+----------------------------------------------------------------------
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Murder Duels Script",
+    LoadingTitle = "Murder Duels",
+    LoadingSubtitle = "by Gemini and Adrian",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
+})
+
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+local CombatTab = Window:CreateTab("Combat", 4483362458)
+local MiscTab = Window:CreateTab("Misc", 4483362458)
+
+function saveConfig()
+    if writefile then
+        local data = {
+            ShowMeters = SHOW_METERS,
+            ShowNames = SHOW_NAMES,
+            ShowSpeed = SHOW_SPEED,
+            HighlightEnabled = HIGHLIGHT_ENABLED,
+            Paused = PAUSED,
+            KeybindMeters = type(keybindMeters) == "userdata" and tostring(keybindMeters.Name) or tostring(keybindMeters),
+            KeybindNames = type(keybindNames) == "userdata" and tostring(keybindNames.Name) or tostring(keybindNames),
+            KeybindHighlight = type(keybindHighlight) == "userdata" and tostring(keybindHighlight.Name) or tostring(keybindHighlight),
+            KeybindPause = type(keybindPause) == "userdata" and tostring(keybindPause.Name) or tostring(keybindPause),
+            KeybindAim = type(keybindAim) == "userdata" and tostring(keybindAim.Name) or tostring(keybindAim),
+            KeybindBhop = type(keybindBhop) == "userdata" and tostring(keybindBhop.Name) or tostring(keybindBhop),
+            KeybindXRay = type(keybindXRay) == "userdata" and tostring(keybindXRay.Name) or tostring(keybindXRay),
+            KeybindMouseUnlock = type(keybindMouseUnlock) == "userdata" and tostring(keybindMouseUnlock.Name) or tostring(keybindMouseUnlock),
+            KeybindPause  = type(keybindPause) == "userdata" and tostring(keybindPause.Name) or tostring(keybindPause),
+            KeybindTerminate = type(keybindTerminate) == "userdata" and tostring(keybindTerminate.Name) or tostring(keybindTerminate),
+            HighlightColor = {HIGHLIGHT_COLOR.R * 255, HIGHLIGHT_COLOR.G * 255, HIGHLIGHT_COLOR.B * 255},
+            OutlineColor = {OUTLINE_COLOR.R * 255, OUTLINE_COLOR.G * 255, OUTLINE_COLOR.B * 255},
+            BhopEnabled = BHOP_ENABLED,
+            BhopPercentBoost = BHOP_PERCENT_BOOST,
+            MouseUnlockEnabled = MOUSE_UNLOCK_ENABLED,
+            AimEnabled = aimEnabled,
+            AimSmoothness = aimSmoothness,
+            AimFov = aimFov,
+            AimKey = aimKey,
+        }
+        pcall(function()
+            writefile(CONFIG_FILE, HttpService:JSONEncode(data))
+        end)
+    end
+end
+
+function terminateScript()
+    ACTIVE = false
+    PAUSED = true
+    customCursor.Visible = false
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            removeHighlight(player.Character)
+            removeCombinedLabel(player.Character)
+        end
+    end
+    if speedGui then speedGui:Destroy() end
+    if updateConnection then updateConnection:Disconnect() end
+    if aimConnection then aimConnection:Disconnect() end
+    if XRAY_ACTIVE then toggleXRay() end
+    Rayfield:Destroy()
+end
+
+local toggleElements = {}
+
+----------------------------------------------------------------------
+-- Visuals Tab Sections
+----------------------------------------------------------------------
+local espSection = VisualsTab:CreateSection("ESP Settings")
+
+toggleElements["HighlightToggle"] = VisualsTab:CreateToggle({
+    Name = "Highlight (ESP)",
+    CurrentValue = HIGHLIGHT_ENABLED,
+    Flag = "HighlightToggle",
+    Callback = function(Value)
+        HIGHLIGHT_ENABLED = Value
+        if not Value then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character then
+                    removeHighlight(player.Character)
+                end
+            end
+        else
+            updateAllHighlights()
+        end
+        saveConfig()
+    end,
+})
+
+VisualsTab:CreateKeybind({
+    Name = "Keybind: Highlight",
+    CurrentKeybind = keybindHighlight,
+    HoldToInteract = false,
+    Flag = "KeybindHighlight",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindHighlight = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        HIGHLIGHT_ENABLED = not HIGHLIGHT_ENABLED
+        toggleElements["HighlightToggle"]:Set(HIGHLIGHT_ENABLED)
+        if not HIGHLIGHT_ENABLED then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character then
+                    removeHighlight(player.Character)
+                end
+            end
+        else
+            updateAllHighlights()
+        end
+        Rayfield:Notify({Title = "Settings", Content = "Highlight: " .. (HIGHLIGHT_ENABLED and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+toggleElements["ShowMeters"] = VisualsTab:CreateToggle({
+    Name = "Show Distance (Meters)",
+    CurrentValue = SHOW_METERS,
+    Flag = "ShowMeters",
+    Callback = function(Value)
+        SHOW_METERS = Value
+        saveConfig()
+    end,
+})
+
+VisualsTab:CreateKeybind({
+    Name = "Keybind: Distance",
+    CurrentKeybind = keybindMeters,
+    HoldToInteract = false,
+    Flag = "KeybindMeters",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindMeters = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        SHOW_METERS = not SHOW_METERS
+        toggleElements["ShowMeters"]:Set(SHOW_METERS)
+        Rayfield:Notify({Title = "Settings", Content = "Distance display: " .. (SHOW_METERS and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+toggleElements["ShowNames"] = VisualsTab:CreateToggle({
+    Name = "Show Names",
+    CurrentValue = SHOW_NAMES,
+    Flag = "ShowNames",
+    Callback = function(Value)
+        SHOW_NAMES = Value
+        saveConfig()
+    end,
+})
+
+VisualsTab:CreateKeybind({
+    Name = "Keybind: Names",
+    CurrentKeybind = keybindNames,
+    HoldToInteract = false,
+    Flag = "KeybindNames",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindNames = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        SHOW_NAMES = not SHOW_NAMES
+        toggleElements["ShowNames"]:Set(SHOW_NAMES)
+        Rayfield:Notify({Title = "Settings", Content = "Show names: " .. (SHOW_NAMES and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+VisualsTab:CreateColorPicker({
+    Name = "Highlight Color",
+    Color = HIGHLIGHT_COLOR,
+    Flag = "HighlightColorPicker",
+    Callback = function(Value)
+        HIGHLIGHT_COLOR = Value
+        updateAllHighlights()
+        saveConfig()
+    end
+})
+
+VisualsTab:CreateColorPicker({
+    Name = "Outline Color",
+    Color = OUTLINE_COLOR,
+    Flag = "OutlineColorPicker",
+    Callback = function(Value)
+        OUTLINE_COLOR = Value
+        updateAllHighlights()
+        saveConfig()
+    end
+})
+
+local worldSection = VisualsTab:CreateSection("World Visuals")
+
+local xrayToggleRef
+xrayToggleRef = VisualsTab:CreateToggle({
+    Name = "X-Ray",
+    CurrentValue = XRAY_ACTIVE,
+    Flag = "XRayToggle",
+    Callback = function(Value)
+        if not isInMatch() then return end
+        if XRAY_ACTIVE ~= Value then toggleXRay() end
+    end,
+})
+
+VisualsTab:CreateKeybind({
+    Name = "Keybind: X-Ray",
+    CurrentKeybind = keybindXRay,
+    HoldToInteract = false,
+    Flag = "KeybindXRay",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindXRay = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        toggleXRay()
+        xrayToggleRef:Set(XRAY_ACTIVE)
+        Rayfield:Notify({Title = "Settings", Content = "X-Ray toggled", Duration = 2})
+    end,
+})
+
+toggleElements["ShowSpeed"] = VisualsTab:CreateToggle({
+    Name = "Show Speedometer (Bottom Left)",
+    CurrentValue = SHOW_SPEED,
+    Flag = "ShowSpeedToggle",
+    Callback = function(Value)
+        SHOW_SPEED = Value
+        speedLabel.Visible = Value and isInMatch()
+        saveConfig()
+    end,
+})
+
+----------------------------------------------------------------------
+-- Combat Tab Sections
+----------------------------------------------------------------------
+local aimSection = CombatTab:CreateSection("Aim Assist")
+
+local aimToggleRef
+aimToggleRef = CombatTab:CreateToggle({
+    Name = "Aim Assist",
+    CurrentValue = aimEnabled,
+    Flag = "AimAssist",
+    Callback = function(Value)
+        aimEnabled = Value
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateDropdown({
+    Name = "Aim Key",
+    Options = {"MouseButton2", "MouseButton1", "E", "Q", "F", "Shift"},
+    CurrentOption = aimKey,
+    Flag = "AimKeyDropdown",
+    Callback = function(Option)
+        aimKey = Option
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateSlider({
+    Name = "Aim Smoothness",
+    Range = {0.1, 2.0},
+    Increment = 0.05,
+    CurrentValue = aimSmoothness,
+    Flag = "AimSmoothnessSlider",
+    Callback = function(Value)
+        aimSmoothness = Value
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateSlider({
+    Name = "Aim FOV Radius",
+    Range = {50, 500},
+    Increment = 10,
+    CurrentValue = aimFov,
+    Flag = "AimFovSlider",
+    Callback = function(Value)
+        aimFov = Value
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateKeybind({
+    Name = "Keybind: Aim Assist",
+    CurrentKeybind = keybindAim,
+    HoldToInteract = false,
+    Flag = "KeybindAim",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindAim = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        aimEnabled = not aimEnabled
+        aimToggleRef:Set(aimEnabled)
+        if not aimEnabled then
+            aiming = false
+            currentTarget, lockedTarget = nil, nil
+            if aimConnection then aimConnection:Disconnect() aimConnection = nil end
+        end
+        Rayfield:Notify({Title = "Settings", Content = "Aim Assist: " .. (aimEnabled and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+local movementSection = CombatTab:CreateSection("Movement")
+
+toggleElements["BhopToggle"] = CombatTab:CreateToggle({
+    Name = "Bunny Hop",
+    CurrentValue = BHOP_ENABLED,
+    Flag = "BhopToggle",
+    Callback = function(Value)
+        BHOP_ENABLED = Value
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateSlider({
+    Name = "Bhop Speed Boost (%)",
+    Range = {0, 200},
+    Increment = 1,
+    CurrentValue = BHOP_PERCENT_BOOST,
+    Flag = "BhopPercentSlider",
+    Callback = function(Value)
+        BHOP_PERCENT_BOOST = Value
+        saveConfig()
+    end,
+})
+
+CombatTab:CreateKeybind({
+    Name = "Keybind: Bunny Hop",
+    CurrentKeybind = keybindBhop,
+    HoldToInteract = false,
+    Flag = "KeybindBhop",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindBhop = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        BHOP_ENABLED = not BHOP_ENABLED
+        toggleElements["BhopToggle"]:Set(BHOP_ENABLED)
+        Rayfield:Notify({Title = "Settings", Content = "Bunny Hop: " .. (BHOP_ENABLED and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+----------------------------------------------------------------------
+-- Misc Tab Sections
+----------------------------------------------------------------------
+local controlSection = MiscTab:CreateSection("Controls")
+
+toggleElements["MouseUnlockToggle"] = MiscTab:CreateToggle({
+    Name = "Unlock Mouse",
+    CurrentValue = MOUSE_UNLOCK_ENABLED,
+    Flag = "MouseUnlockToggle",
+    Callback = function(Value)
+        MOUSE_UNLOCK_ENABLED = Value
+        if not Value then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+        end
+        saveConfig()
+    end,
+})
+
+MiscTab:CreateKeybind({
+    Name = "Keybind: Unlock Mouse",
+    CurrentKeybind = keybindMouseUnlock,
+    HoldToInteract = false,
+    Flag = "KeybindMouseUnlock",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindMouseUnlock = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        MOUSE_UNLOCK_ENABLED = not MOUSE_UNLOCK_ENABLED
+        toggleElements["MouseUnlockToggle"]:Set(MOUSE_UNLOCK_ENABLED)
+        if not MOUSE_UNLOCK_ENABLED then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+        else
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+        end
+        Rayfield:Notify({Title = "Settings", Content = "Mouse Unlock: " .. (MOUSE_UNLOCK_ENABLED and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+local generalSection = MiscTab:CreateSection("General Settings")
+
+local pauseToggleRef
+pauseToggleRef = MiscTab:CreateToggle({
+    Name = "Pause Script Features",
+    CurrentValue = PAUSED,
+    Flag = "PauseToggle",
+    Callback = function(Value)
+        PAUSED = Value
+        saveConfig()
+    end,
+})
+
+MiscTab:CreateKeybind({
+    Name = "Keybind: Pause",
+    CurrentKeybind = keybindPause,
+    HoldToInteract = false,
+    Flag = "KeybindPause",
+    Callback = function(Key)
+        if not isInMatch() then return end
+        keybindPause = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        PAUSED = not PAUSED
+        pauseToggleRef:Set(PAUSED)
+        Rayfield:Notify({Title = "Settings", Content = "Pause: " .. (PAUSED and "ON" or "OFF"), Duration = 2})
+    end,
+})
+
+MiscTab:CreateKeybind({
+    Name = "Keybind: Terminate Script",
+    CurrentKeybind = keybindTerminate,
+    HoldToInteract = false,
+    Flag = "KeybindTerminate",
+    Callback = function(Key)
+        keybindTerminate = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        saveConfig()
+        Rayfield:Notify({Title = "Settings", Content = "Terminating script...", Duration = 1})
+        task.wait(0.2)
+        terminateScript()
+    end,
+})
+
+MiscTab:CreateButton({
+    Name = "Terminate Script",
+    Callback = function()
+        terminateScript()
+    end,
+})
+
+----------------------------------------------------------------------
+-- 🔹 Input Event Listeners
+----------------------------------------------------------------------
+local function checkAimKeyTrigger(input, isBegan)
+    if not ACTIVE or not isInMatch() or not aimEnabled then return end
+    
+    local isMatchKey = false
+    if aimKey == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        isMatchKey = true
+    elseif aimKey == "MouseButton1" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isMatchKey = true
+    elseif aimKey == "E" and input.KeyCode == Enum.KeyCode.E then
+        isMatchKey = true
+    elseif aimKey == "Q" and input.KeyCode == Enum.KeyCode.Q then
+        isMatchKey = true
+    elseif aimKey == "F" and input.KeyCode == Enum.KeyCode.F then
+        isMatchKey = true
+    elseif aimKey == "Shift" and (input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift) then
+        isMatchKey = true
+    end
+    
+    if isMatchKey then
+        if isBegan then
+            aiming = true
+            if not lockedTarget then
+                local _, targetHead = findNearestPlayer()
+                if targetHead then
+                    lockedTarget = targetHead
+                    currentTarget = targetHead
+                end
+            end
+            if not aimConnection then
+                aimConnection = RunService.RenderStepped:Connect(permanentAim)
+            end
+        else
+            aiming = false
+            lockedTarget, currentTarget = nil, nil
+            if aimConnection then
+                aimConnection:Disconnect()
+                aimConnection = nil
+            end
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not isInMatch() then return end
+    checkAimKeyTrigger(input, true)
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed or not isInMatch() then return end
+    checkAimKeyTrigger(input, false)
+end)
+
+----------------------------------------------------------------------
+-- 🔹 Fast Initial Setup
+----------------------------------------------------------------------
+task.spawn(function()
+    task.wait(0.5)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            if isInMatch() and isTargetPlayer(player) then
+                if SHOW_NAMES or SHOW_METERS then
+                    createCombinedLabel(player.Character, player)
+                end
+            end
+        end
+    end
+end)
