@@ -31,19 +31,19 @@ terminateEvent.Event:Connect(function()
 end)
 
 ----------------------------------------------------------------------
--- 💾 Configuration Saving & Loading System (Fixed Folder & File Naming)
+-- 💾 Nested Configuration Folder & Saving System (Per User)
 ----------------------------------------------------------------------
 local FOLDER_NAME = "Murder Duells"
-local playerFolderName = FOLDER_NAME .. "/" .. LocalPlayer.Name
-local CONFIG_FILE = playerFolderName .. "/Murder Duells Settings.json"
+local USER_FOLDER = FOLDER_NAME .. "/" .. LocalPlayer.Name
+local CONFIG_FILE = USER_FOLDER .. "/Settings.json"
 
 local function ensureFolderStructure()
     if makefolder and isfolder then
         if not isfolder(FOLDER_NAME) then
             makefolder(FOLDER_NAME)
         end
-        if not isfolder(playerFolderName) then
-            makefolder(playerFolderName)
+        if not isfolder(USER_FOLDER) then
+            makefolder(USER_FOLDER)
         end
     end
 end
@@ -108,7 +108,7 @@ local BHOP_PERCENT_BOOST = savedConfig.BhopPercentBoost or 50
 local bhopStartTime = 0
 local bhopWasJumping = false
 
--- Mouse Unlock Settings (Default to false and T keybind as requested)
+-- Mouse Unlock Settings
 local MOUSE_UNLOCK_ENABLED = savedConfig.MouseUnlockEnabled ~= nil and savedConfig.MouseUnlockEnabled or false
 
 local UPDATE_INTERVAL = 0.1
@@ -632,13 +632,10 @@ end
 RunService.RenderStepped:Connect(function(dt)
     if not ACTIVE then return end
     
-    if not isInMatch() then
+    if not isInMatch() or not MOUSE_UNLOCK_ENABLED then
         customCursor.Visible = false
         speedLabel.Visible = false
-        return
-    end
-    
-    if MOUSE_UNLOCK_ENABLED then
+    else
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
         local mouseLocation = UserInputService:GetMouseLocation()
         customCursor.Position = UDim2.new(0, mouseLocation.X, 0, mouseLocation.Y + CUSTOM_CURSOR_OFFSET_Y)
@@ -671,8 +668,6 @@ RunService.RenderStepped:Connect(function(dt)
         end
         
         customCursor.Visible = true
-    else
-        customCursor.Visible = false
     end
 
     local char = LocalPlayer.Character
@@ -862,6 +857,37 @@ local VisualsTab = Window:CreateTab("Visuals", 4483362458)
 local CombatTab = Window:CreateTab("Combat", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
+-- Robust Tab Visibility Checker & Enforcement Loop
+local function enforceCorrectTabVisibility()
+    pcall(function()
+        for _, gui in pairs(CoreGui:GetChildren()) do
+            if gui.Name:match("Rayfield") then
+                for _, desc in pairs(gui:GetDescendants()) do
+                    if desc.Name == "Main" and desc.Visible then
+                        local foundValidTab = false
+                        for _, child in pairs(desc:GetDescendants()) do
+                            if child.Name == "TabTitle" or child.Name == "Title" then
+                                local text = tostring(child.Text):lower()
+                                if text:find("visuals") or text:find("combat") or text:find("misc") then
+                                    foundValidTab = true
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    while ACTIVE do
+        enforceCorrectTabVisibility()
+        task.wait(0.5)
+    end
+end)
+
 function saveConfig()
     ensureFolderStructure()
     if writefile then
@@ -871,15 +897,15 @@ function saveConfig()
             ShowSpeed = SHOW_SPEED,
             HighlightEnabled = HIGHLIGHT_ENABLED,
             Paused = PAUSED,
-            KeybindMeters = type(keybindMeters) == "userdata" and tostring(keybindMeters.Name) or tostring(keybindMeters),
-            KeybindNames = type(keybindNames) == "userdata" and tostring(keybindNames.Name) or tostring(keybindNames),
-            KeybindHighlight = type(keybindHighlight) == "userdata" and tostring(keybindHighlight.Name) or tostring(keybindHighlight),
-            KeybindPause = type(keybindPause) == "userdata" and tostring(keybindPause.Name) or tostring(keybindPause),
-            KeybindAim = type(keybindAim) == "userdata" and tostring(keybindAim.Name) or tostring(keybindAim),
-            KeybindBhop = type(keybindBhop) == "userdata" and tostring(keybindBhop.Name) or tostring(keybindBhop),
-            KeybindXRay = type(keybindXRay) == "userdata" and tostring(keybindXRay.Name) or tostring(keybindXRay),
-            KeybindMouseUnlock = type(keybindMouseUnlock) == "userdata" and tostring(keybindMouseUnlock.Name) or tostring(keybindMouseUnlock),
-            KeybindTerminate = type(keybindTerminate) == "userdata" and tostring(keybindTerminate.Name) or tostring(keybindTerminate),
+            KeybindMeters = typeof(keybindMeters) == "EnumItem" and keybindMeters.Name or tostring(keybindMeters),
+            KeybindNames = typeof(keybindNames) == "EnumItem" and keybindNames.Name or tostring(keybindNames),
+            KeybindHighlight = typeof(keybindHighlight) == "EnumItem" and keybindHighlight.Name or tostring(keybindHighlight),
+            KeybindPause = typeof(keybindPause) == "EnumItem" and keybindPause.Name or tostring(keybindPause),
+            KeybindAim = typeof(keybindAim) == "EnumItem" and keybindAim.Name or tostring(keybindAim),
+            KeybindBhop = typeof(keybindBhop) == "EnumItem" and keybindBhop.Name or tostring(keybindBhop),
+            KeybindXRay = typeof(keybindXRay) == "EnumItem" and keybindXRay.Name or tostring(keybindXRay),
+            KeybindMouseUnlock = typeof(keybindMouseUnlock) == "EnumItem" and keybindMouseUnlock.Name or tostring(keybindMouseUnlock),
+            KeybindTerminate = typeof(keybindTerminate) == "EnumItem" and keybindTerminate.Name or tostring(keybindTerminate),
             HighlightColor = {HIGHLIGHT_COLOR.R * 255, HIGHLIGHT_COLOR.G * 255, HIGHLIGHT_COLOR.B * 255},
             OutlineColor = {OUTLINE_COLOR.R * 255, OUTLINE_COLOR.G * 255, OUTLINE_COLOR.B * 255},
             VisibleHighlightEnabled = VISIBLE_HIGHLIGHT_ENABLED,
@@ -950,9 +976,9 @@ VisualsTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindHighlight",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindHighlight = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindHighlight = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         HIGHLIGHT_ENABLED = not HIGHLIGHT_ENABLED
         toggleElements["HighlightToggle"]:Set(HIGHLIGHT_ENABLED)
         if not HIGHLIGHT_ENABLED then
@@ -984,9 +1010,9 @@ VisualsTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindMeters",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindMeters = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindMeters = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         SHOW_METERS = not SHOW_METERS
         toggleElements["ShowMeters"]:Set(SHOW_METERS)
         Rayfield:Notify({Title = "Settings", Content = "Distance display: " .. (SHOW_METERS and "ON" or "OFF"), Duration = 2})
@@ -1009,9 +1035,9 @@ VisualsTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindNames",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindNames = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindNames = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         SHOW_NAMES = not SHOW_NAMES
         toggleElements["ShowNames"]:Set(SHOW_NAMES)
         Rayfield:Notify({Title = "Settings", Content = "Show names: " .. (SHOW_NAMES and "ON" or "OFF"), Duration = 2})
@@ -1092,9 +1118,9 @@ VisualsTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindXRay",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindXRay = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindXRay = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         toggleXRay()
         xrayToggleRef:Set(XRAY_ACTIVE)
         Rayfield:Notify({Title = "Settings", Content = "X-Ray toggled", Duration = 2})
@@ -1162,8 +1188,8 @@ CombatTab:CreateDropdown({
 
 CombatTab:CreateSlider({
     Name = "Aim Smoothness",
-    Range = {1, 20},
-    Increment = 0.5,
+    Range = {0.1, 2},
+    Increment = 0.1,
     CurrentValue = aimSmoothness,
     Flag = "AimSmoothnessSlider",
     Callback = function(Value)
@@ -1190,9 +1216,9 @@ CombatTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindAim",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindAim = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindAim = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         aimEnabled = not aimEnabled
         aimToggleRef:Set(aimEnabled)
         if not aimEnabled then
@@ -1234,9 +1260,9 @@ CombatTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindBhop",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindBhop = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindBhop = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         BHOP_ENABLED = not BHOP_ENABLED
         toggleElements["BhopToggle"]:Set(BHOP_ENABLED)
         Rayfield:Notify({Title = "Settings", Content = "Bunny Hop: " .. (BHOP_ENABLED and "ON" or "OFF"), Duration = 2})
@@ -1255,6 +1281,9 @@ toggleElements["MouseUnlockToggle"] = MiscTab:CreateToggle({
     Callback = function(Value)
         MOUSE_UNLOCK_ENABLED = Value
         saveConfig()
+        if Value and not isInMatch() then
+            Rayfield:Notify({Title = "Controls", Content = "Warning: Mouse unlock is active, but you are not in a match.", Duration = 2})
+        end
     end,
 })
 
@@ -1264,7 +1293,7 @@ MiscTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindMouseUnlock",
     Callback = function(Key)
-        keybindMouseUnlock = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindMouseUnlock = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
         MOUSE_UNLOCK_ENABLED = not MOUSE_UNLOCK_ENABLED
         toggleElements["MouseUnlockToggle"]:Set(MOUSE_UNLOCK_ENABLED)
@@ -1291,9 +1320,9 @@ MiscTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindPause",
     Callback = function(Key)
-        if not isInMatch() then return end
-        keybindPause = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindPause = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
+        if not isInMatch() then return end
         PAUSED = not PAUSED
         pauseToggleRef:Set(PAUSED)
         Rayfield:Notify({Title = "Settings", Content = "Pause: " .. (PAUSED and "ON" or "OFF"), Duration = 2})
@@ -1306,7 +1335,7 @@ MiscTab:CreateKeybind({
     HoldToInteract = false,
     Flag = "KeybindTerminate",
     Callback = function(Key)
-        keybindTerminate = type(Key) == "userdata" and tostring(Key.Name) or tostring(Key)
+        keybindTerminate = typeof(Key) == "EnumItem" and Key.Name or tostring(Key)
         saveConfig()
         Rayfield:Notify({Title = "Settings", Content = "Terminating script...", Duration = 1})
         task.wait(0.2)
